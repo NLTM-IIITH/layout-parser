@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+python-doctr[torch]
+ipython
+requests
+torchvision
+python-multipart
