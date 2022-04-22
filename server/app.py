@@ -4,7 +4,7 @@ import cv2
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 
-from .helper import process_image, save_uploaded_image, sort_regions
+from .helper import process_image, save_uploaded_image
 from .models import *
 
 app = FastAPI(
@@ -21,8 +21,6 @@ async def doctr_layout_parser(image: UploadFile = File(...)):
 	"""
 	image_path = save_uploaded_image(image)
 	regions = process_image(image_path)
-	regions = [Region.from_bounding_box(i) for i in regions]
-	regions = sort_regions(regions)
 	return LayoutResponse(regions=regions)
 
 
@@ -43,8 +41,6 @@ async def layout_parser_swagger_only_demo(
 		str(uuid.uuid4())
 	)
 	# TODO: all the lines after this can be transfered to the helper.py file
-	regions = [Region.from_bounding_box(i) for i in regions]
-	regions = sort_regions(regions)
 	bboxes = [i.bounding_box for i in regions]
 	bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
 	img = cv2.imread(image_path)
