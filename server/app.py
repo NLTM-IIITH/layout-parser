@@ -1,10 +1,10 @@
 import uuid
 
 import cv2
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from .helper import process_image, save_uploaded_image
+from .helper import process_image, process_image_craft, save_uploaded_image
 from .models import *
 
 app = FastAPI(
@@ -15,18 +15,25 @@ app = FastAPI(
 
 
 @app.post('/layout', tags=['Layout Parser'], response_model=LayoutResponse)
-async def doctr_layout_parser(image: UploadFile = File(...)):
+async def doctr_layout_parser(
+	image: UploadFile = File(...),
+	model: ModelChoice = Form(ModelChoice.doctr)
+):
 	"""
 	API endpoint for ***doctr*** version of the layout parser
 	"""
 	image_path = save_uploaded_image(image)
-	regions = process_image(image_path)
+	if model == ModelChoice.craft:
+		regions = process_image_craft(image_path)
+	else:
+		regions = process_image(image_path)
 	return LayoutResponse(regions=regions)
 
 
 @app.post('/layout/demo', tags=['Demo'])
 async def layout_parser_swagger_only_demo(
 	image: UploadFile = File(...),
+	model: ModelChoice = Form(ModelChoice.doctr)
 ):
 	"""
 	This endpoint is only used to demonstration purposes.
@@ -36,7 +43,10 @@ async def layout_parser_swagger_only_demo(
 	PS: This endpoint is not to be called from outside of swagger
 	"""
 	image_path = save_uploaded_image(image)
-	regions = process_image(image_path)
+	if model == ModelChoice.craft:
+		regions = process_image_craft(image_path)
+	else:
+		regions = process_image(image_path)
 	save_location = '/home/krishna/layout-parser/images/{}.jpg'.format(
 		str(uuid.uuid4())
 	)
