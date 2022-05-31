@@ -2,6 +2,8 @@ import os
 import shutil
 import uuid
 from os.path import join
+from subprocess import run
+from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
 from doctr.io import DocumentFile
@@ -49,6 +51,51 @@ def convert_geometry_to_bbox(
 		w=x2-x1,
 		h=y2-y1,
 	)
+
+def process_image_craft(image_path: str) -> List[Region]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns: list of BoundingBox class
+	"""
+	print('running craft model for image...', end='')
+	tmp = TemporaryDirectory(prefix='craft')
+	os.system(f'cp {image_path} {tmp.name}')
+	print(tmp.name)
+	run([
+		'docker',
+		'run',
+		'--rm',
+		'--gpus', 'all',
+		'-v', f'{tmp.name}:/data',
+		'parser:craft',
+		'python', 'test.py'
+	])
+	a = [join(tmp.name, i) for i in os.listdir(tmp.name) if i.endswith('txt')]
+	# TODO: add the proper error detection if the txt file is not found
+	a = a[0]
+	a = open(a, 'r').read().strip()
+	a = a.split('\n\n')
+	a = [i.strip().split('\n') for i in a]
+	ret = []
+	for i, line in enumerate(a):
+		for j in line:
+			word = j.strip().split(',')
+			word = list(map(int, word))
+			ret.append(
+				Region.from_bounding_box(
+					BoundingBox(
+						x=word[0],
+						y=word[1],
+						w=word[2],
+						h=word[3],
+					),
+					line=i+1
+				)
+			)
+	return ret
+
 
 def process_image(image_path: str) -> List[Region]:
 	"""

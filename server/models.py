@@ -1,6 +1,12 @@
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+
+class ModelChoice(str, Enum):
+	doctr = 'doctr'
+	craft = 'craft'
 
 
 class LayoutConfig(BaseModel):
