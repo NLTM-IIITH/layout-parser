@@ -9,69 +9,6 @@ class ModelChoice(str, Enum):
 	craft = 'craft'
 
 
-class LayoutConfig(BaseModel):
-	pass
-
-class ImageFile(BaseModel):
-	imageContent: Optional[str] = Field(
-		description='image content',
-	)
-	imageUri: Optional[str] = Field(
-		description='path on gcp/s3 bucket or https url',
-	)
-class Image(BaseModel):
-	""" List of """
-	image: Optional[str] = Field(
-		description='image name',
-	)
-class ImageColors(BaseModel):
-	""" List of """
-	image: Optional[str] = Field(
-		description='image name',
-	)
-	rgbaValues: Optional[str] = Field(
-		description='rgba values of the given image',
-	)
-	hexacode: Optional[str] = Field(
-		description='hexa-code of the given image',
-	)
-class ImageFonts(BaseModel):
-	""" List of """
-	image: Optional[str] = Field(
-		description='image name',
-	)
-	fontSize: Optional[str] = Field(
-		description='Font-size of the text in the image',
-	)
-	fontFamily: Optional[str] = Field(
-		description='Font-family of the given image',
-	)
-	fontDecoration: Optional[str] = Field(
-		description='Font-Decoration of the given image',
-	)
-class ImageProperties(BaseModel):
-	""" List of """
-	image: Optional[str] = Field(
-		description='image name',
-	)
-	tables: Optional[bool] = Field(
-		description='Returns whether the document contains Tables',
-	)
-	columns: Optional[str] = Field(
-		description='Returns column type of the page',
-	)
-	
-
-
-
-
-class LayoutRequest(BaseModel):
-	image: List[ImageFile]
-	config: LayoutConfig
-class preProcessorRequest(BaseModel):
-	image: List[ImageFile]
-
-
 class BoundingBox(BaseModel):
 	x: int = Field(
 		description='X coordinate of the upper left point of bbox'
@@ -125,13 +62,3 @@ class Region(BaseModel):
 
 class LayoutResponse(BaseModel):
 	regions: List[Region]
-class PreProcessorBinarizeResponse(BaseModel):
-	images: List[Image]
-class PreProcessorGrayScaleResponse(BaseModel):
-	images: List[Image]
-class PreProcessorColorResponse(BaseModel):
-	images: List[ImageColors]
-class PreProcessorFontResponse(BaseModel):
-	images: List[ImageFonts]
-class PreProcessorPropertiesResponse(BaseModel):
-	images: List[ImageProperties]

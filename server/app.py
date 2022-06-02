@@ -5,13 +5,16 @@ from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
 from .helper import process_image, process_image_craft, save_uploaded_image
-from .models import *
+from .models import LayoutResponse, ModelChoice
+from .modules.preprocess.routes import router as preprocess_router
 
 app = FastAPI(
 	title='Layout Parser API',
 	description='',
 	docs_url='/',
 )
+
+app.include_router(preprocess_router)
 
 
 @app.post('/layout', tags=['Main'], response_model=LayoutResponse)
@@ -29,55 +32,6 @@ async def doctr_layout_parser(
 		regions = process_image(image_path)
 	return LayoutResponse(regions=regions)
 
-
-@app.post('/preprocess/binarize', tags=['Pre Process'], response_model=PreProcessorBinarizeResponse)
-async def binarize_image(images: List[bytes] = File(...)):
-	"""
-	Returns the binarized image
-	"""
-	image_path = save_uploaded_image(images)
-	regions = process_image(image_path)
-	return PreProcessorBinarizeResponse(images=regions)
-
-
-@app.post('/preprocess/grayscale', tags=['Pre Process'], response_model=PreProcessorGrayScaleResponse)
-async def grayscale_image(images: List[bytes] = File(...)):
-	"""
-	Returns the Grayscale image
-	"""
-	image_path = save_uploaded_image(images)
-	regions = process_image(image_path)
-	return PreProcessorGrayScaleResponse(images=regions)
-
-
-@app.post('/preprocess/color', tags=['Pre Process'], response_model=PreProcessorColorResponse)
-async def Get_Image_Colors(images: List[bytes] = File(...)):
-	"""
-	Returns the binarized image
-	"""
-	image_path = save_uploaded_image(images)
-	regions = process_image(image_path)
-	return PreProcessorColorResponse(images=regions)
-
-
-@app.post('/preprocess/font', tags=['Pre Process'], response_model=PreProcessorFontResponse)
-async def Get_Font_Properties_in_the_Image(images: List[bytes] = File(...)):
-	"""
-	Returns the binarized image
-	"""
-	image_path = save_uploaded_image(images)
-	regions = process_image(image_path)
-	return PreProcessorFontResponse(images=regions)
-
-
-@app.post('/preprocess/properties', tags=['Pre Process'], response_model=PreProcessorPropertiesResponse)
-async def Get_Image_Properties(images: List[bytes] = File(...)):
-	"""
-	Returns the binarized image
-	"""
-	image_path = save_uploaded_image(images)
-	regions = process_image(image_path)
-	return PreProcessorPropertiesResponse(images=regions)
 
 
 @app.post('/layout/visualize', tags=['Visualization'])
