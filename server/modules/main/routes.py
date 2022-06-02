@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.post('', tags=['Main'], response_model=LayoutResponse)
+@router.post('', response_model=LayoutResponse)
 async def doctr_layout_parser(
 	image: UploadFile = File(...),
 	model: ModelChoice = Form(ModelChoice.doctr)
@@ -29,7 +29,7 @@ async def doctr_layout_parser(
 	return LayoutResponse(regions=regions)
 
 
-@router.post('/visualize', tags=['Visualization'])
+@router.post('/visualize')
 async def layout_parser_swagger_only_demo(
 	image: UploadFile = File(...),
 	model: ModelChoice = Form(ModelChoice.doctr)

@@ -23,22 +23,6 @@ class BoundingBox(BaseModel):
 		description='height of the bbox (in pixel)'
 	)
 
-	def topolygon(self) -> List[List[int]]:
-		"""
-		converts the {x,y,w,h} type of bounding box to the 4 polygon point bounding
-		boxes
-
-		@returns [[x,y], [x,y], [x,y], [x,y]]
-		this format of the polygon type of bbox output is compatible with
-		the sorting algorithm found on github
-		"""
-		return [
-			[self.x, self.y],
-			[self.x+self.w, self.y],
-			[self.x+self.w, self.y+self.h],
-			[self.x, self.y+self.h],
-		]
-
 
 class Region(BaseModel):
 	bounding_box: BoundingBox
