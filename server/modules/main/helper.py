@@ -10,7 +10,7 @@ from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from fastapi import UploadFile
 
-from .config import IMAGE_FOLDER
+from ..core.config import IMAGE_FOLDER
 from .models import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.

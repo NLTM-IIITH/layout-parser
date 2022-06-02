@@ -1,6 +1,6 @@
-from fastapi import APIRouter, File, UploadFile
-from server.helper import process_image, save_uploaded_image
+from fastapi import APIRouter, File
 
+from ..main.helper import process_image, save_uploaded_image
 from .models import *
 
 router = APIRouter(
