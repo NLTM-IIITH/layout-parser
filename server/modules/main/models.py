@@ -46,3 +46,11 @@ class Region(BaseModel):
 
 class LayoutResponse(BaseModel):
 	regions: List[Region]
+
+
+class LayoutImageResponse(BaseModel):
+	"""
+	Model class for holding the layout response for one single image
+	"""
+	image_name: str
+	regions: List[Region]

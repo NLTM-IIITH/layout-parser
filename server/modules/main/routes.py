@@ -1,11 +1,12 @@
 import uuid
+from typing import List
 
 import cv2
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
 from .helper import process_image, process_image_craft, save_uploaded_image
-from .models import LayoutResponse, ModelChoice
+from .models import LayoutImageResponse, LayoutResponse, ModelChoice
 
 router = APIRouter(
 	prefix='/layout',
@@ -13,20 +14,25 @@ router = APIRouter(
 )
 
 
-@router.post('', response_model=LayoutResponse)
+@router.post('', response_model=List[LayoutImageResponse])
 async def doctr_layout_parser(
-	image: UploadFile = File(...),
+	images: List[UploadFile],
 	model: ModelChoice = Form(ModelChoice.doctr)
 ):
 	"""
 	API endpoint for ***doctr*** version of the layout parser
 	"""
-	image_path = save_uploaded_image(image)
-	if model == ModelChoice.craft:
-		regions = process_image_craft(image_path)
-	else:
-		regions = process_image(image_path)
-	return LayoutResponse(regions=regions)
+	print(images)
+	ret = []
+	for image in images:
+		print(f'processing for image: {image.filename}')
+		image_path = save_uploaded_image(image)
+		if model == ModelChoice.craft:
+			regions = process_image_craft(image_path)
+		else:
+			regions = process_image(image_path)
+		ret.append(LayoutImageResponse(regions=regions, image_name=image.filename))
+	return ret
 
 
 @router.post('/visualize')
