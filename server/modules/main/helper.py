@@ -17,6 +17,17 @@ from .models import *
 os.environ['USE_TORCH'] = '1'
 
 
+def save_uploaded_images(files: List[UploadFile]) -> str:
+	print('removing all the previous uploaded files from the image folder')
+	os.system(f'rm -rf {IMAGE_FOLDER}/*')
+	print(f'Saving {len(files)} to location: {IMAGE_FOLDER}')
+	for image in files:
+		location = join(IMAGE_FOLDER, f'{image.filename}')
+		with open(location, 'wb') as f:
+			shutil.copyfileobj(image.file, f)
+	return IMAGE_FOLDER
+
+
 def save_uploaded_image(image: UploadFile) -> str:
 	"""
 	function to save the uploaded image to the disk
@@ -51,6 +62,52 @@ def convert_geometry_to_bbox(
 		w=x2-x1,
 		h=y2-y1,
 	)
+
+def process_multiple_image_craft(folder_path: str) -> List[Region]:
+	"""
+	Given a path to the folder if images, this function returns a list
+	of word level bounding boxes of all the images
+	"""
+	run([
+		'docker',
+		'run',
+		'--rm',
+		'--gpus', 'all',
+		'-v', f'{folder_path}:/data',
+		'parser:craft',
+		'python', 'test.py'
+	])
+	files = [join(folder_path, i) for i in os.listdir(folder_path) if i.endswith('txt')]
+	ret = []
+	for file in files:
+		# TODO: add the proper error detection if the txt file is not found
+		image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
+		a = open(file, 'r').read().strip()
+		a = a.split('\n\n')
+		a = [i.strip().split('\n') for i in a]
+		regions = []
+		for i, line in enumerate(a):
+			for j in line:
+				word = j.strip().split(',')
+				word = list(map(int, word))
+				regions.append(
+					Region.from_bounding_box(
+						BoundingBox(
+							x=word[0],
+							y=word[1],
+							w=word[2],
+							h=word[3],
+						),
+						line=i+1
+					)
+				)
+		ret.append(
+			LayoutImageResponse(
+				image_name=image_name,
+				regions=regions.copy()
+			)
+		)
+	return ret
 
 def process_image_craft(image_path: str) -> List[Region]:
 	"""

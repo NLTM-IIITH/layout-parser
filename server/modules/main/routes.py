@@ -5,8 +5,10 @@ import cv2
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from .helper import process_image, process_image_craft, save_uploaded_image
-from .models import LayoutImageResponse, LayoutResponse, ModelChoice
+from .helper import (process_image, process_image_craft,
+                     process_multiple_image_craft, save_uploaded_image,
+                     save_uploaded_images)
+from .models import LayoutImageResponse, ModelChoice
 
 router = APIRouter(
 	prefix='/layout',
@@ -14,7 +16,7 @@ router = APIRouter(
 )
 
 
-@router.post('', response_model=List[LayoutImageResponse])
+@router.post('/', response_model=List[LayoutImageResponse])
 async def doctr_layout_parser(
 	images: List[UploadFile],
 	model: ModelChoice = Form(ModelChoice.doctr)
@@ -23,16 +25,17 @@ async def doctr_layout_parser(
 	API endpoint for ***doctr*** version of the layout parser
 	"""
 	print(images)
-	ret = []
-	for image in images:
-		print(f'processing for image: {image.filename}')
-		image_path = save_uploaded_image(image)
-		if model == ModelChoice.craft:
-			regions = process_image_craft(image_path)
-		else:
+	if model == ModelChoice.craft:
+		folder_path = save_uploaded_images(images)
+		return process_multiple_image_craft(folder_path)
+	else:
+		ret = []
+		for image in images:
+			print(f'processing for image: {image.filename}')
+			image_path = save_uploaded_image(image)
 			regions = process_image(image_path)
-		ret.append(LayoutImageResponse(regions=regions, image_name=image.filename))
-	return ret
+			ret.append(LayoutImageResponse(regions=regions, image_name=image.filename))
+		return ret
 
 
 @router.post('/visualize')
