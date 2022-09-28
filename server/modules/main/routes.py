@@ -55,7 +55,7 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_craft(image_path)
 	else:
 		regions = process_image(image_path)
-	save_location = '/home/krishna/layout-parser/images/{}.jpg'.format(
+	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
 		str(uuid.uuid4())
 	)
 	# TODO: all the lines after this can be transfered to the helper.py file
