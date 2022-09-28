@@ -19,20 +19,7 @@ os.environ['USE_TORCH'] = '1'
 
 
 def logtime(t: float, msg:  str) -> None:
-	print(f'[{int(time.time() - t)}]\t {msg}')
-
-
-def save_uploaded_images(files: List[UploadFile]) -> str:
-	t = time.time()
-	print('removing all the previous uploaded files from the image folder')
-	os.system(f'rm -rf {IMAGE_FOLDER}/*')
-	print(f'Saving {len(files)} to location: {IMAGE_FOLDER}')
-	for image in files:
-		location = join(IMAGE_FOLDER, f'{image.filename}')
-		with open(location, 'wb') as f:
-			shutil.copyfileobj(image.file, f)
-	logtime(t, f'Time took to save {len(files)} images')
-	return IMAGE_FOLDER
+	print(f'[{int(time.time() - t)}s]\t {msg}')
 
 
 def save_uploaded_image(image: UploadFile) -> str:
@@ -72,11 +59,12 @@ def convert_geometry_to_bbox(
 		h=y2-y1,
 	)
 
-def process_multiple_image_craft(folder_path: str) -> List[Region]:
+def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 	"""
 	Given a path to the folder if images, this function returns a list
 	of word level bounding boxes of all the images
 	"""
+	t = time.time()
 	run([
 		'docker',
 		'run',
@@ -86,8 +74,10 @@ def process_multiple_image_craft(folder_path: str) -> List[Region]:
 		'parser:craft',
 		'python', 'test.py'
 	])
+	logtime(t, 'Time took to run the craft docker container')
 	files = [join(folder_path, i) for i in os.listdir(folder_path) if i.endswith('txt')]
 	ret = []
+	t = time.time()
 	for file in files:
 		# TODO: add the proper error detection if the txt file is not found
 		image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
@@ -116,7 +106,91 @@ def process_multiple_image_craft(folder_path: str) -> List[Region]:
 				regions=regions.copy()
 			)
 		)
+	logtime(t, 'Time took to process the output of the craft docker')
 	return ret
+
+
+def process_multiple_image_doctr(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+	t = time.time()
+	predictor = ocr_predictor(pretrained=True)
+	logtime(t, 'Time taken to load the doctr model')
+
+	files = [join(folder_path, i) for i in os.listdir(folder_path)]
+	doc = DocumentFile.from_images(files)
+
+	t = time.time()
+	a = predictor(doc)
+	logtime(t, 'Time taken to perform doctr inference')
+
+	t = time.time()
+	ret = []
+	for idx in range(len(files)):
+		page = a.pages[idx]
+		# in the format (height, width)
+		dim = page.dimensions
+		lines = []
+		for i in page.blocks:
+			lines += i.lines
+		regions = []
+		for i, line in enumerate(lines):
+			for word in line.words:
+				regions.append(
+					Region.from_bounding_box(
+						convert_geometry_to_bbox(word.geometry, dim),
+						line=i+1,
+					)
+				)
+		ret.append(
+			LayoutImageResponse(
+				regions=regions.copy(),
+				image_name=os.path.basename(files[idx])
+			)
+		)
+	logtime(t, 'Time taken to process the doctr output')
+	return ret
+
+
+def process_image(image_path: str) -> List[Region]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+	t = time.time()
+	predictor = ocr_predictor(pretrained=True)
+	logtime(t, 'Time taken to load the doctr model')
+	t = time.time()
+	doc = DocumentFile.from_images(image_path)
+	logtime(t, 'Time taken to load the image')
+	t = time.time()
+	a = predictor(doc)
+	logtime(t, 'Time taken to perform doctr inference')
+	t = time.time()
+	a = a.pages[0]
+	# in the format (height, width)
+	dim = a.dimensions
+	lines = []
+	for i in a.blocks:
+		lines += i.lines
+	ret = []
+	for i, line in enumerate(lines):
+		for word in line.words:
+			ret.append(
+				Region.from_bounding_box(
+					convert_geometry_to_bbox(word.geometry, dim),
+					line=i+1,
+				)
+			)
+	logtime(t, 'Time taken to process the doctr output')
+	return ret
+
 
 def process_image_craft(image_path: str) -> List[Region]:
 	"""
@@ -158,36 +232,6 @@ def process_image_craft(image_path: str) -> List[Region]:
 						h=word[3],
 					),
 					line=i+1
-				)
-			)
-	return ret
-
-
-def process_image(image_path: str) -> List[Region]:
-	"""
-	given the path of the image, this function returns a list
-	of bounding boxes of all the word detected regions.
-
-	@returns list of BoundingBox class
-	"""
-	print('running the doctr model for image...', end='')
-	predictor = ocr_predictor(pretrained=True)
-	doc = DocumentFile.from_images(image_path)
-	a = predictor(doc)
-	print('done')
-	a = a.pages[0]
-	# in the format (height, width)
-	dim = a.dimensions
-	lines = []
-	for i in a.blocks:
-		lines += i.lines
-	ret = []
-	for i, line in enumerate(lines):
-		for word in line.words:
-			ret.append(
-				Region.from_bounding_box(
-					convert_geometry_to_bbox(word.geometry, dim),
-					line=i+1,
 				)
 			)
 	return ret
