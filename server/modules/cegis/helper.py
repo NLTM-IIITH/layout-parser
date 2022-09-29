@@ -1,41 +1,62 @@
 import base64
 import csv
+import imghdr
 import os
 import shutil
-import urllib
-import uuid
 from os.path import join
-from subprocess import run
 from tempfile import TemporaryDirectory
-from typing import List, Tuple
 
 import cv2
 import numpy as np
-from doctr.io import DocumentFile
-from doctr.models import ocr_predictor
-from fastapi import UploadFile
+import requests
+from PIL import Image
 
-from ..core.config import IMAGE_FOLDER
 from .models import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
 
 
+def process_image_url(image_url: str, savepath: str) -> None:
+	"""
+	input the url of the image and download and saves the image inside the folder.
+	savename is the name of the image to be saved as
+	"""
+	tmp = TemporaryDirectory(prefix='save_image')
+	r = requests.get(image_url, stream=True, verify=False)
+	print(r)
+	if r.status_code == 200:
+		r.raw.decode_content = True
+		img_path = join(tmp.name, 'image')
+		with open(img_path, 'wb') as f:
+			shutil.copyfileobj(r.raw, f)
+		img = Image.open(img_path)
+		if imghdr.what(img_path) == 'png':
+			print('image is PNG format, converting to JPG')
+			img = img.convert('RGB')
+		img.save(savepath)
+		print('downloaded the image:', image_url)
+	else:
+		raise Exception('status_code is not 200 while downloading the image from url')
+
+
 def save_image(url: str, dir_path: str) -> str:
 	ret = join(dir_path, 'image.jpg')
-	urllib.request.urlretrieve(url, ret)
+	process_image_url(url, ret)
 	return ret
 
 
 def save_template_image(url: str, dir_path: str) -> str:
 	ret = join(dir_path, 'template.jpg')
-	urllib.request.urlretrieve(url, ret)
+	process_image_url(url, ret)
 	return ret
 
 def save_template_coords(url: str, dir_path: str) -> str:
 	ret = join(dir_path, 'template.csv')
-	urllib.request.urlretrieve(url, ret)
+	r = requests.get(url, stream=True, verify=False)
+	r.raw.decode_content = True
+	with open(ret, 'wb') as f:
+		shutil.copyfileobj(r.raw, f)
 	return ret
 
 

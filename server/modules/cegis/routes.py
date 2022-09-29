@@ -1,10 +1,6 @@
-import uuid
 from tempfile import TemporaryDirectory
-from typing import List
 
-import cv2
-from fastapi import APIRouter, File, Form, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter
 
 from .helper import (get_all_images, perform_align, save_image,
                      save_template_coords, save_template_image)

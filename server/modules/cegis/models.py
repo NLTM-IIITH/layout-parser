@@ -1,7 +1,5 @@
 from enum import Enum
-from optparse import Option
-from os.path import join
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, Field
 
