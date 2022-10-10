@@ -68,6 +68,7 @@ def extractImage(img, coordinate_path, saved_images_path):
 		csvFile = csv.reader(file)
 
 		for lines in csvFile:
+			print(lines)
 			x = int(lines[1])
 			y = int(lines[2])
 			w = int(lines[3])

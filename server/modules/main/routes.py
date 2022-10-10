@@ -57,6 +57,6 @@ async def layout_parser_swagger_only_demo(
 	bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
 	img = cv2.imread(image_path)
 	for i in bboxes:
-		img = cv2.rectangle(img, i[0], i[1], (0,0,255), 1)
+		img = cv2.rectangle(img, i[0], i[1], (0,0,255), 3)
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)
