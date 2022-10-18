@@ -3,7 +3,7 @@ import csv
 import imghdr
 import os
 import shutil
-from os.path import join
+from os.path import basename, join
 from tempfile import TemporaryDirectory
 
 import cv2
@@ -69,15 +69,16 @@ def extractImage(img, coordinate_path, saved_images_path):
 
 		for lines in csvFile:
 			print(lines)
-			x = int(lines[1])
-			y = int(lines[2])
-			w = int(lines[3])
-			h = int(lines[4])
+			field = str(lines[0]).strip()
+			x = int(float(lines[1]))
+			y = int(float(lines[3]))
+			w = int(float(lines[2])) - x
+			h = int(float(lines[4])) - y
 
 			if w == 0 or h == 0: continue
 	
 			else:
-				images_name = saved_images_path + "/" + str(count)+ ".jpg"
+				images_name = saved_images_path + "/" + field + '_' + str(count)+ ".jpg"
 				single_image = img[y: y+h, x: x+w]
 				cv2.imwrite(images_name, single_image)
 
@@ -124,7 +125,20 @@ def perform_align(imgPath, saved_images_path, img_template_path, coordinate_path
 
 def get_all_images(path):
 	a = os.listdir(path)
-	a = sorted(a, key=lambda x:int(x.strip().split('.')[0]))
+	a = sorted(a, key=lambda x:int(x.strip().split('.')[0].split('_')[-1]))
+	ret = {}
 	a = [join(path, i) for i in a]
-	a = [base64.b64encode(open(i, 'rb').read()).decode() for i in a]
-	return a
+	for i in a:
+		name = basename(i).strip().split('_')[0].strip()
+		print(i,name)
+		if name in ret:
+			ret[name]['images'].append(
+				base64.b64encode(open(i, 'rb').read()).decode()
+			)
+		else:
+			ret[name] = {
+				'images':[
+					base64.b64encode(open(i, 'rb').read()).decode()
+				]
+			}
+	return ret

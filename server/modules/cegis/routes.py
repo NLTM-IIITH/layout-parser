@@ -1,4 +1,5 @@
 from tempfile import TemporaryDirectory
+from typing import Dict, List
 
 from fastapi import APIRouter
 
@@ -12,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.post('/', response_model=LayoutOut)
+@router.post('/', response_model=Dict[str, Dict[str, List[str]]])
 async def cegis_layout_parser(
 	data: LayoutIn
 ) -> LayoutOut:
@@ -26,4 +27,4 @@ async def cegis_layout_parser(
 	template_coords_path = save_template_coords(data.template_coords, tmp.name)
 	print(image_path, template_image_path, template_coords_path)
 	perform_align(image_path, tmp2.name, template_image_path, template_coords_path)
-	return LayoutOut(images=get_all_images(tmp2.name))
+	return get_all_images(tmp2.name)
