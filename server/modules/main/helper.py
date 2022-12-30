@@ -1,4 +1,6 @@
 import os
+import torch
+from collections import OrderedDict
 import shutil
 import time
 import uuid
@@ -17,9 +19,21 @@ from .models import *
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
 
-
 def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
+
+t = time.time()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
+state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
+
+new_state_dict = OrderedDict()
+for k, v in state_dict.items():
+	name = k[7:] # remove `module.`
+	new_state_dict[name] = v
+PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
+logtime(t, 'Time taken to load the doctr model')
 
 
 def save_uploaded_image(image: UploadFile) -> str:
@@ -70,6 +84,7 @@ def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 		'run',
 		'--rm',
 		'--gpus', 'all',
+		'--net', 'host',
 		'-v', f'{folder_path}:/data',
 		'parser:craft',
 		'python', 'test.py'
@@ -156,7 +171,52 @@ def process_multiple_image_doctr(folder_path: str) -> List[LayoutImageResponse]:
 	return ret
 
 
-def process_image(image_path: str) -> List[Region]:
+def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+
+	files = [join(folder_path, i) for i in os.listdir(folder_path)]
+	t = time.time()
+	doc = DocumentFile.from_images(files)
+	logtime(t, 'Time taken to load all the images')
+
+	t = time.time()
+	a = PREDICTOR_V2(doc)
+	logtime(t, 'Time taken to perform doctr inference')
+
+	t = time.time()
+	ret = []
+	for idx in range(len(files)):
+		page = a.pages[idx]
+		# in the format (height, width)
+		dim = page.dimensions
+		lines = []
+		for i in page.blocks:
+			lines += i.lines
+		regions = []
+		for i, line in enumerate(lines):
+			for word in line.words:
+				regions.append(
+					Region.from_bounding_box(
+						convert_geometry_to_bbox(word.geometry, dim),
+						line=i+1,
+					)
+				)
+		ret.append(
+			LayoutImageResponse(
+				regions=regions.copy(),
+				image_name=os.path.basename(files[idx])
+			)
+		)
+	logtime(t, 'Time taken to process the doctr output')
+	return ret
+
+
+def process_image(image_path: str, model: str='doctr') -> List[Region]:
 	"""
 	given the path of the image, this function returns a list
 	of bounding boxes of all the word detected regions.
@@ -164,13 +224,16 @@ def process_image(image_path: str) -> List[Region]:
 	@returns list of BoundingBox class
 	"""
 	t = time.time()
-	predictor = ocr_predictor(pretrained=True)
-	logtime(t, 'Time taken to load the doctr model')
-	t = time.time()
 	doc = DocumentFile.from_images(image_path)
 	logtime(t, 'Time taken to load the image')
 	t = time.time()
-	a = predictor(doc)
+	if model == 'doctr':
+		print('performing doctr')
+		predictor = ocr_predictor(pretrained=True)
+		a = predictor(doc)
+	else:
+		print('performing v2_doctr')
+		a = PREDICTOR_V2(doc)
 	logtime(t, 'Time taken to perform doctr inference')
 	t = time.time()
 	a = a.pages[0]

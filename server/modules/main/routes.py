@@ -7,8 +7,9 @@ from fastapi.responses import FileResponse
 
 from .dependencies import save_uploaded_images
 from .helper import (process_image, process_image_craft,
-                     process_multiple_image_craft,
-                     process_multiple_image_doctr, save_uploaded_image)
+					 process_multiple_image_craft,
+					 process_multiple_image_doctr, save_uploaded_image,
+					 process_multiple_image_doctr_v2)
 from .models import LayoutImageResponse, ModelChoice
 
 router = APIRouter(
@@ -30,6 +31,8 @@ async def doctr_layout_parser(
 		return process_multiple_image_craft(folder_path)
 	elif model == ModelChoice.doctr:
 		return process_multiple_image_doctr(folder_path)
+	elif model == ModelChoice.v2_doctr:
+		return process_multiple_image_doctr_v2(folder_path)
 
 
 @router.post('/visualize')
@@ -48,7 +51,7 @@ async def layout_parser_swagger_only_demo(
 	if model == ModelChoice.craft:
 		regions = process_image_craft(image_path)
 	else:
-		regions = process_image(image_path)
+		regions = process_image(image_path, model.value)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
 		str(uuid.uuid4())
 	)
@@ -56,7 +59,19 @@ async def layout_parser_swagger_only_demo(
 	bboxes = [i.bounding_box for i in regions]
 	bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
 	img = cv2.imread(image_path)
+	count = 1
 	for i in bboxes:
 		img = cv2.rectangle(img, i[0], i[1], (0,0,255), 3)
+		img = cv2.putText(
+			img,
+			str(count),
+			(i[0][0]-5, i[0][1]-5),
+			cv2.FONT_HERSHEY_COMPLEX,
+			1,
+			(0,0,255),
+			1,
+			cv2.LINE_AA
+		)
+		count += 1
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)

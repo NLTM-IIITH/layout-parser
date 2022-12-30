@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 import cv2
 import numpy as np
 import requests
-from PIL import Image
+from PIL import Image, ImageOps
 
 from .models import *
 
@@ -17,7 +17,7 @@ from .models import *
 os.environ['USE_TORCH'] = '1'
 
 
-def process_image_url(image_url: str, savepath: str) -> None:
+def process_image_url(image_url: str, savepath: str, resize=None) -> None:
 	"""
 	input the url of the image and download and saves the image inside the folder.
 	savename is the name of the image to be saved as
@@ -31,25 +31,29 @@ def process_image_url(image_url: str, savepath: str) -> None:
 		with open(img_path, 'wb') as f:
 			shutil.copyfileobj(r.raw, f)
 		img = Image.open(img_path)
+		img = ImageOps.exif_transpose(img)
 		if imghdr.what(img_path) == 'png':
 			print('image is PNG format, converting to JPG')
 			img = img.convert('RGB')
+		if resize:
+			img = img.resize(resize)
 		img.save(savepath)
 		print('downloaded the image:', image_url)
+		return (img.width, img.height)
 	else:
 		raise Exception('status_code is not 200 while downloading the image from url')
 
 
-def save_image(url: str, dir_path: str) -> str:
+def save_image(url: str, dir_path: str, template_size) -> str:
 	ret = join(dir_path, 'image.jpg')
-	process_image_url(url, ret)
+	process_image_url(url, ret, template_size)
 	return ret
 
 
 def save_template_image(url: str, dir_path: str) -> str:
 	ret = join(dir_path, 'template.jpg')
-	process_image_url(url, ret)
-	return ret
+	tr = process_image_url(url, ret)
+	return (ret, tr)
 
 def save_template_coords(url: str, dir_path: str) -> str:
 	ret = join(dir_path, 'template.csv')
@@ -68,17 +72,20 @@ def extractImage(img, coordinate_path, saved_images_path):
 		csvFile = csv.reader(file)
 
 		for lines in csvFile:
-			print(lines)
+			# print(lines)
 			field = str(lines[0]).strip()
 			x = int(float(lines[1]))
 			y = int(float(lines[3]))
 			w = int(float(lines[2])) - x
 			h = int(float(lines[4])) - y
 
-			if w == 0 or h == 0: continue
+			if w == 0 or h == 0:
+				print(lines)
+				print(x,y,w,h)
+				print('Skipping the image at count: {}'.format(count))
 	
 			else:
-				images_name = saved_images_path + "/" + field + '_' + str(count)+ ".jpg"
+				images_name = saved_images_path + "/" + field + '-' + str(count)+ ".jpg"
 				single_image = img[y: y+h, x: x+w]
 				cv2.imwrite(images_name, single_image)
 
@@ -121,15 +128,18 @@ def perform_align(imgPath, saved_images_path, img_template_path, coordinate_path
 
 	height, width, _ = im1.shape
 	im2_reg = cv2.warpPerspective(im2, h, (width, height))
+	print(type(im2_reg))
+	print(im2_reg.shape)
+	# cv2.imwrite(im2_reg[:,:], '/home/layout/image.jpg')
 	extractImage(im2_reg, coordinate_path, saved_images_path)
 
 def get_all_images(path):
 	a = os.listdir(path)
-	a = sorted(a, key=lambda x:int(x.strip().split('.')[0].split('_')[-1]))
+	a = sorted(a, key=lambda x:int(x.strip().split('.')[0].split('-')[-1]))
 	ret = {}
 	a = [join(path, i) for i in a]
 	for i in a:
-		name = basename(i).strip().split('_')[0].strip()
+		name = basename(i).strip().split('-')[0].strip()
 		print(i,name)
 		if name in ret:
 			ret[name]['images'].append(
