@@ -5,7 +5,7 @@ import shutil
 import time
 import uuid
 from os.path import join
-from subprocess import run
+from subprocess import run, check_output
 from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
@@ -43,6 +43,8 @@ def save_uploaded_image(image: UploadFile) -> str:
 	@returns the absolute location of the saved image
 	"""
 	t = time.time()
+	print('removing all the previous uploaded files from the image folder')
+	os.system(f'rm -rf {IMAGE_FOLDER}/*')
 	location = join(IMAGE_FOLDER, '{}.{}'.format(
 		str(uuid.uuid4()),
 		image.filename.strip().split('.')[-1]
@@ -73,21 +75,32 @@ def convert_geometry_to_bbox(
 		h=y2-y1,
 	)
 
+def load_craft_container():
+	command = 'docker container ls --format "{{.Names}}"'
+	a = check_output(command, shell=True).decode('utf-8').strip().split('\n')
+	if 'parser-craft' not in a:
+		print('CRAFT docker container not found! Starting new container')
+		run([
+			'docker',
+			'run', '-d',
+			'--name=parser-craft',
+			'--gpus', 'all',
+			'-v', f'{IMAGE_FOLDER}:/data',
+			'parser:craft',
+			'python', 'test.py'
+		])
+
 def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 	"""
 	Given a path to the folder if images, this function returns a list
 	of word level bounding boxes of all the images
 	"""
 	t = time.time()
+	load_craft_container()
 	run([
 		'docker',
-		'run',
-		'--rm',
-		'--gpus', 'all',
-		'--net', 'host',
-		'-v', f'{folder_path}:/data',
-		'parser:craft',
-		'python', 'test.py'
+		'exec', 'parser-craft',
+		'bash', 'infer.sh'
 	])
 	logtime(t, 'Time took to run the craft docker container')
 	files = [join(folder_path, i) for i in os.listdir(folder_path) if i.endswith('txt')]
@@ -263,19 +276,13 @@ def process_image_craft(image_path: str) -> List[Region]:
 	@returns: list of BoundingBox class
 	"""
 	print('running craft model for image...', end='')
-	tmp = TemporaryDirectory(prefix='craft')
-	os.system(f'cp {image_path} {tmp.name}')
-	print(tmp.name)
+	load_craft_container()
 	run([
 		'docker',
-		'run',
-		'--rm',
-		'--gpus', 'all',
-		'-v', f'{tmp.name}:/data',
-		'parser:craft',
-		'python', 'test.py'
+		'exec', 'parser-craft',
+		'bash', 'infer.sh'
 	])
-	a = [join(tmp.name, i) for i in os.listdir(tmp.name) if i.endswith('txt')]
+	a = [join(IMAGE_FOLDER, i) for i in os.listdir(IMAGE_FOLDER) if i.endswith('txt')]
 	# TODO: add the proper error detection if the txt file is not found
 	a = a[0]
 	a = open(a, 'r').read().strip()
