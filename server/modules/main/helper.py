@@ -1,14 +1,14 @@
 import os
-import torch
-from collections import OrderedDict
 import shutil
 import time
 import uuid
+from collections import OrderedDict
 from os.path import join
-from subprocess import run, check_output
+from subprocess import check_output, run
 from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
+import torch
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from fastapi import UploadFile
@@ -22,18 +22,21 @@ os.environ['USE_TORCH'] = '1'
 def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
 
-t = time.time()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def logtime(t: float, msg:  str) -> None:
+	print(f'[{int(time.time() - t)}]\t {msg}')
 
-PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
-state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
 
-new_state_dict = OrderedDict()
-for k, v in state_dict.items():
-	name = k[7:] # remove `module.`
-	new_state_dict[name] = v
-PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
-logtime(t, 'Time taken to load the doctr model')
+def save_uploaded_images(files: List[UploadFile]) -> str:
+	t = time.time()
+	print('removing all the previous uploaded files from the image folder')
+	os.system(f'rm -rf {IMAGE_FOLDER}/*')
+	print(f'Saving {len(files)} to location: {IMAGE_FOLDER}')
+	for image in files:
+		location = join(IMAGE_FOLDER, f'{image.filename}')
+		with open(location, 'wb') as f:
+			shutil.copyfileobj(image.file, f)
+	logtime(t, f'Time took to save {len(files)} images')
+	return IMAGE_FOLDER
 
 
 def save_uploaded_image(image: UploadFile) -> str:
@@ -43,8 +46,6 @@ def save_uploaded_image(image: UploadFile) -> str:
 	@returns the absolute location of the saved image
 	"""
 	t = time.time()
-	print('removing all the previous uploaded files from the image folder')
-	os.system(f'rm -rf {IMAGE_FOLDER}/*')
 	location = join(IMAGE_FOLDER, '{}.{}'.format(
 		str(uuid.uuid4()),
 		image.filename.strip().split('.')[-1]
