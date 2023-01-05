@@ -28,6 +28,16 @@ def save_image(url: str, dir_path: str) -> str:
 	return ret
 
 
+def save_template_image(url: str, dir_path: str) -> str:
+	ret = join(dir_path, 'template.jpg')
+	urllib.request.urlretrieve(url, ret)
+	return ret
+
+def save_template_coords(url: str, dir_path: str) -> str:
+	ret = join(dir_path, 'template.csv')
+	urllib.request.urlretrieve(url, ret)
+	return ret
+
 
 def extractImage(img, coordinate_path, saved_images_path):
 	count = 1
@@ -52,9 +62,9 @@ def extractImage(img, coordinate_path, saved_images_path):
 				count += 1
       
 
-def perform_align(imgPath, saved_images_path, template='template1'):
-	img_template_path = f'/home/krishna/layout-parser/server/modules/cegis/templates/{template}.png'
-	coordinate_path = f'/home/krishna/layout-parser/server/modules/cegis/templates/{template}.csv'
+def perform_align(imgPath, saved_images_path, img_template_path, coordinate_path):
+	# img_template_path = f'/home/krishna/layout-parser/server/modules/cegis/templates/{template}.png'
+	# coordinate_path = f'/home/krishna/layout-parser/server/modules/cegis/templates/{template}.csv'
 	im1 = cv2.imread(img_template_path)
 	im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2RGB)
 

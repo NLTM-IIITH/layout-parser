@@ -16,9 +16,13 @@ class LayoutIn(BaseModel):
 		...,
 		description='Give the Downloadable URL of the filled form image'
 	)
-	template: Optional[TemplateChoice] = Field(
-		TemplateChoice.template1,
-		description='Select the Template for this image'
+	template_image: str = Field(
+		...,
+		description='URL to the template image file (either JPG or PNG)'
+	)
+	template_coords: str = Field(
+		...,
+		description='URL to the CSV encoded Bounding boxes for template'
 	)
 
 class LayoutOut(BaseModel):

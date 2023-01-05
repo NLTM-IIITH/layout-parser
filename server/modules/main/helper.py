@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 import uuid
 from os.path import join
 from subprocess import run
@@ -17,7 +18,12 @@ from .models import *
 os.environ['USE_TORCH'] = '1'
 
 
+def logtime(t: float, msg:  str) -> None:
+	print(f'[{int(time.time() - t)}]\t {msg}')
+
+
 def save_uploaded_images(files: List[UploadFile]) -> str:
+	t = time.time()
 	print('removing all the previous uploaded files from the image folder')
 	os.system(f'rm -rf {IMAGE_FOLDER}/*')
 	print(f'Saving {len(files)} to location: {IMAGE_FOLDER}')
@@ -25,6 +31,7 @@ def save_uploaded_images(files: List[UploadFile]) -> str:
 		location = join(IMAGE_FOLDER, f'{image.filename}')
 		with open(location, 'wb') as f:
 			shutil.copyfileobj(image.file, f)
+	logtime(t, f'Time took to save {len(files)} images')
 	return IMAGE_FOLDER
 
 
@@ -34,12 +41,14 @@ def save_uploaded_image(image: UploadFile) -> str:
 
 	@returns the absolute location of the saved image
 	"""
+	t = time.time()
 	location = join(IMAGE_FOLDER, '{}.{}'.format(
 		str(uuid.uuid4()),
 		image.filename.strip().split('.')[-1]
 	))
 	with open(location, 'wb+') as f:
 		shutil.copyfileobj(image.file, f)
+	logtime(t, 'Time took to save one image')
 	return location
 
 def convert_geometry_to_bbox(
