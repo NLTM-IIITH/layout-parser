@@ -7,9 +7,9 @@ from fastapi.responses import FileResponse
 
 from .dependencies import save_uploaded_images
 from .helper import (process_image, process_image_craft,
-					 process_multiple_image_craft,
-					 process_multiple_image_doctr, save_uploaded_image,
-					 process_multiple_image_doctr_v2)
+                     process_multiple_image_craft,
+                     process_multiple_image_doctr,
+                     process_multiple_image_doctr_v2, save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 
 router = APIRouter(
