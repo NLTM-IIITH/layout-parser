@@ -103,12 +103,16 @@ def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 		'bash', 'infer.sh'
 	])
 	logtime(t, 'Time took to run the craft docker container')
+	img_files = [i for i in os.listdir(folder_path) if not i.endswith('txt')]
 	files = [join(folder_path, i) for i in os.listdir(folder_path) if i.endswith('txt')]
 	ret = []
 	t = time.time()
 	for file in files:
 		# TODO: add the proper error detection if the txt file is not found
-		image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
+		# image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
+		img_name = os.path.basename(file).strip()[4:].replace('.txt', '')
+		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
+		print(image_name)
 		a = open(file, 'r').read().strip()
 		a = a.split('\n\n')
 		a = [i.strip().split('\n') for i in a]
