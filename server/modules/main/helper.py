@@ -56,7 +56,8 @@ def save_uploaded_image(image: UploadFile) -> str:
 
 def convert_geometry_to_bbox(
 	geometry: Tuple[Tuple[float, float], Tuple[float, float]],
-	dim: Tuple[int, int]
+	dim: Tuple[int, int],
+	padding: int = 0
 ) -> BoundingBox:
 	"""
 	converts the geometry that is fetched from the doctr models
@@ -69,10 +70,10 @@ def convert_geometry_to_bbox(
 	x2 = int(geometry[1][0] * dim[1])
 	y2 = int(geometry[1][1] * dim[0])
 	return BoundingBox(
-		x=x1,
-		y=y1,
-		w=x2-x1,
-		h=y2-y1,
+		x=x1 - padding,
+		y=y1 - padding,
+		w=x2-x1 + padding,
+		h=y2-y1 + padding,
 	)
 
 def load_craft_container():
@@ -219,7 +220,7 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 			for word in line.words:
 				regions.append(
 					Region.from_bounding_box(
-						convert_geometry_to_bbox(word.geometry, dim),
+						convert_geometry_to_bbox(word.geometry, dim, padding=3),
 						line=i+1,
 					)
 				)
