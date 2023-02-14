@@ -12,6 +12,7 @@ from .helper import (process_image, process_image_craft,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_worddetector, save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
+from .post_helper import process_dilate, process_multiple_dilate
 
 router = APIRouter(
 	prefix='/layout',
@@ -22,26 +23,31 @@ router = APIRouter(
 @router.post('/', response_model=List[LayoutImageResponse])
 async def doctr_layout_parser(
 	folder_path: str = Depends(save_uploaded_images),
-	model: ModelChoice = Form(ModelChoice.doctr)
+	model: ModelChoice = Form(ModelChoice.doctr),
+	dilate: bool = Form(False),
 ):
 	"""
 	API endpoint for calling the layout parser
 	"""
 	print(model.value)
 	if model == ModelChoice.craft:
-		return process_multiple_image_craft(folder_path)
+		ret = process_multiple_image_craft(folder_path)
 	elif model == ModelChoice.worddetector:
-		return process_multiple_image_worddetector(folder_path)
+		ret = process_multiple_image_worddetector(folder_path)
 	elif model == ModelChoice.doctr:
-		return process_multiple_image_doctr(folder_path)
+		ret = process_multiple_image_doctr(folder_path)
 	elif model == ModelChoice.v2_doctr:
-		return process_multiple_image_doctr_v2(folder_path)
+		ret = process_multiple_image_doctr_v2(folder_path)
+	if dilate:
+		ret = process_multiple_dilate(ret)
+	return ret
 
 
 @router.post('/visualize')
 async def layout_parser_swagger_only_demo(
 	image: UploadFile = File(...),
-	model: ModelChoice = Form(ModelChoice.doctr)
+	model: ModelChoice = Form(ModelChoice.doctr),
+	dilate: bool = Form(False),
 ):
 	"""
 	This endpoint is only used to demonstration purposes.
@@ -57,6 +63,8 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_worddetector(image_path)
 	else:
 		regions = process_image(image_path, model.value)
+	if dilate:
+		regions = process_dilate(regions, image_path)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
 		str(uuid.uuid4())
 	)
