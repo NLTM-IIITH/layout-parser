@@ -7,9 +7,10 @@ from fastapi.responses import FileResponse
 
 from .dependencies import save_uploaded_images
 from .helper import (process_image, process_image_craft,
-                     process_multiple_image_craft,
+                     process_image_worddetector, process_multiple_image_craft,
                      process_multiple_image_doctr,
-                     process_multiple_image_doctr_v2, save_uploaded_image)
+                     process_multiple_image_doctr_v2,
+                     process_multiple_image_worddetector, save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 
 router = APIRouter(
@@ -29,6 +30,8 @@ async def doctr_layout_parser(
 	print(model.value)
 	if model == ModelChoice.craft:
 		return process_multiple_image_craft(folder_path)
+	elif model == ModelChoice.worddetector:
+		return process_multiple_image_worddetector(folder_path)
 	elif model == ModelChoice.doctr:
 		return process_multiple_image_doctr(folder_path)
 	elif model == ModelChoice.v2_doctr:
@@ -50,6 +53,8 @@ async def layout_parser_swagger_only_demo(
 	image_path = save_uploaded_image(image)
 	if model == ModelChoice.craft:
 		regions = process_image_craft(image_path)
+	elif model == ModelChoice.worddetector:
+		regions = process_image_worddetector(image_path)
 	else:
 		regions = process_image(image_path, model.value)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(

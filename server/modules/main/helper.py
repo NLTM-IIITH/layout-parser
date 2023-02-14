@@ -143,6 +143,54 @@ def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 	return ret
 
 
+def process_multiple_image_worddetector(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	Given a path to the folder if images, this function returns a list
+	of word level bounding boxes of all the images
+	"""
+	t = time.time()
+	command = f'docker run -it --rm --gpus all -v {folder_path}:/data parser:worddetector python infer.py'
+	check_output(command, shell=True)
+	logtime(t, 'Time took to run the worddetector docker container')
+	img_files = [i for i in os.listdir(folder_path) if not i.endswith('txt')]
+	files = [join(folder_path, i) for i in os.listdir(folder_path) if i.endswith('txt')]
+	ret = []
+	t = time.time()
+	for file in files:
+		# TODO: add the proper error detection if the txt file is not found
+		# image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
+		img_name = os.path.basename(file).strip()[4:].replace('.txt', '')
+		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
+		print(image_name)
+		a = open(file, 'r').read().strip()
+		a = a.split('\n\n')
+		a = [i.strip().split('\n') for i in a]
+		regions = []
+		for i, line in enumerate(a):
+			for j in line:
+				word = j.strip().split(',')
+				word = list(map(int, word))
+				regions.append(
+					Region.from_bounding_box(
+						BoundingBox(
+							x=word[0],
+							y=word[1],
+							w=word[2],
+							h=word[3],
+						),
+						line=i+1
+					)
+				)
+		ret.append(
+			LayoutImageResponse(
+				image_name=image_name,
+				regions=regions.copy()
+			)
+		)
+	logtime(t, 'Time took to process the output of the worddetector docker')
+	return ret
+
+
 def process_multiple_image_doctr(folder_path: str) -> List[LayoutImageResponse]:
 	"""
 	given the path of the image, this function returns a list
@@ -287,6 +335,41 @@ def process_image_craft(image_path: str) -> List[Region]:
 		'exec', 'parser-craft',
 		'bash', 'infer.sh'
 	])
+	a = [join(IMAGE_FOLDER, i) for i in os.listdir(IMAGE_FOLDER) if i.endswith('txt')]
+	# TODO: add the proper error detection if the txt file is not found
+	a = a[0]
+	a = open(a, 'r').read().strip()
+	a = a.split('\n\n')
+	a = [i.strip().split('\n') for i in a]
+	ret = []
+	for i, line in enumerate(a):
+		for j in line:
+			word = j.strip().split(',')
+			word = list(map(int, word))
+			ret.append(
+				Region.from_bounding_box(
+					BoundingBox(
+						x=word[0],
+						y=word[1],
+						w=word[2],
+						h=word[3],
+					),
+					line=i+1
+				)
+			)
+	return ret
+
+
+def process_image_worddetector(image_path: str) -> List[Region]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns: list of BoundingBox class
+	"""
+	print('running craft model for image...', end='')
+	command = f'docker run -it --rm --gpus all -v {IMAGE_FOLDER}:/data parser:worddetector python infer.py'
+	check_output(command, shell=True)
 	a = [join(IMAGE_FOLDER, i) for i in os.listdir(IMAGE_FOLDER) if i.endswith('txt')]
 	# TODO: add the proper error detection if the txt file is not found
 	a = a[0]

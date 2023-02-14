@@ -8,6 +8,7 @@ class ModelChoice(str, Enum):
 	doctr = 'doctr'
 	craft = 'craft'
 	v2_doctr = 'v2_doctr'
+	worddetector = 'worddetector'
 
 
 class BoundingBox(BaseModel):
