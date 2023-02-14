@@ -220,7 +220,7 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 			for word in line.words:
 				regions.append(
 					Region.from_bounding_box(
-						convert_geometry_to_bbox(word.geometry, dim, padding=3),
+						convert_geometry_to_bbox(word.geometry, dim, padding=5),
 						line=i+1,
 					)
 				)
@@ -265,7 +265,7 @@ def process_image(image_path: str, model: str='doctr') -> List[Region]:
 		for word in line.words:
 			ret.append(
 				Region.from_bounding_box(
-					convert_geometry_to_bbox(word.geometry, dim),
+					convert_geometry_to_bbox(word.geometry, dim, padding=5),
 					line=i+1,
 				)
 			)
