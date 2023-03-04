@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 from fastapi import APIRouter
 
 from .helper import process_images, process_layout_output
-from .models import SIRequest, SIResponse
+from .models import MIResponse, PostprocessRequest, SIResponse
 
 router = APIRouter(
 	prefix='/layout/postprocess',
@@ -16,7 +16,7 @@ router = APIRouter(
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_language(si_request: SIRequest) -> list[SIResponse]:
+def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **REAL** Scenetext images.
 	this model works for all the 14 language (13 Indian + english)
@@ -32,7 +32,7 @@ def identify_language(si_request: SIRequest) -> list[SIResponse]:
 	response_model=list[SIResponse],
 	response_model_exclude_none=True
 )
-def identify_script(si_request: SIRequest) -> list[SIResponse]:
+def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
 	This is an endpoint for identifying the script of the word images.
 	this model was contributed by **Punjab university (@Ankur)** on 07-10-2022
@@ -45,4 +45,21 @@ def identify_script(si_request: SIRequest) -> list[SIResponse]:
 	tmp = TemporaryDirectory(prefix='st_language_classify')
 	process_images(si_request.images, tmp.name)
 	call(f'./script_iden_v1.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+
+@router.post(
+	'/modality',
+	response_model=list[MIResponse],
+	response_model_exclude_none=True,
+)
+def identify_language(si_request: PostprocessRequest) -> list[MIResponse]:
+	"""
+	This is the endpoint for classifying the modality of the images.
+	this model works for all the 14 language (13 Indian + english) and
+	outputs among 3 classes ["**printed**", "**handwritten**", "**scenetext**"]
+	"""
+	tmp = TemporaryDirectory(prefix='modality_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./modality_iden_v1.sh {tmp.name}', shell=True)
 	return process_layout_output(tmp.name)

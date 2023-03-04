@@ -12,5 +12,5 @@ fi
 
 docker run --rm --gpus all --net host \
 	-v $DATA_DIR:/data \
-	langiden:scenetext \
+	modalityiden:realst \
 	python infer.py

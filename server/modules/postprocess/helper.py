@@ -5,7 +5,7 @@ from os.path import join
 
 from fastapi import HTTPException
 
-from .models import SIResponse
+from .models import ClassifyResponse
 
 
 def process_images(images: list[str], path: str='/home/layout/layout-parser/images'):
@@ -35,7 +35,9 @@ def process_images(images: list[str], path: str='/home/layout/layout-parser/imag
 			)
 
 
-def process_layout_output(path: str = '/home/layout/layout-parser/images') -> list[SIResponse]:
+def process_layout_output(
+	path: str = '/home/layout/layout-parser/images'
+) -> list[ClassifyResponse]:
 	"""
 	process the ./images/out.json file and returns the ocr response.
 	"""
@@ -44,7 +46,7 @@ def process_layout_output(path: str = '/home/layout/layout-parser/images') -> li
 		a = json.loads(a)
 		a = list(a.items())
 		a = sorted(a, key=lambda x:int(x[0].split('.')[0]))
-		return [SIResponse(text=i[1]) for i in a]
+		return [ClassifyResponse(text=i[1]) for i in a]
 	except Exception as e:
 		print(e)
 		raise HTTPException(

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# DATA_DIR="/home/layout/layout-parser/images"
 DATA_DIR="$1"
 
 echo "Checking for data dir"
