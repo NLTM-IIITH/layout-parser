@@ -144,3 +144,4 @@ staticfiles
 
 # custom files and folders to exclude
 images
+.vscode
