@@ -1,9 +1,9 @@
 from subprocess import call
-from typing import List
+from tempfile import TemporaryDirectory
 
 from fastapi import APIRouter
 
-from .helper import process_images, process_ocr_output
+from .helper import process_images, process_layout_output
 from .models import SIRequest, SIResponse
 
 router = APIRouter(
@@ -11,13 +11,28 @@ router = APIRouter(
 	tags=['Postprocess'],
 )
 
+@router.post(
+	'/language/scenetext',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_language(si_request: SIRequest) -> list[SIResponse]:
+	"""
+	This is the endpoint for classifying the language of the **REAL** Scenetext images.
+	this model works for all the 14 language (13 Indian + english)
+	"""
+	tmp = TemporaryDirectory(prefix='st_language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_v1.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
 
 @router.post(
 	'/script',
-	response_model=List[SIResponse],
+	response_model=list[SIResponse],
 	response_model_exclude_none=True
 )
-def identify_script(si_request: SIRequest) -> List[SIResponse]:
+def identify_script(si_request: SIRequest) -> list[SIResponse]:
 	"""
 	This is an endpoint for identifying the script of the word images.
 	this model was contributed by **Punjab university (@Ankur)** on 07-10-2022
@@ -27,6 +42,7 @@ def identify_script(si_request: SIRequest) -> List[SIResponse]:
 	Currently 8 recognized languages are [**hindi, telugu, tamil, gujarati,
 	punjabi, urdu, bengali, english**]
 	"""
-	path = process_images(si_request.images)
-	call(f'./script_iden_v1.sh', shell=True)
-	return process_ocr_output()
+	tmp = TemporaryDirectory(prefix='st_language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./script_iden_v1.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)

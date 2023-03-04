@@ -11,7 +11,7 @@ else
 	echo -e "DATA_DIR\t$DATA_DIR"
 fi
 
-docker run --rm --name=script-indentification --gpus all --net host \
+docker run --rm --gpus all --net host \
 	-v $DATA_DIR:/data \
-	script:test \
-	python app.py
+	langiden:scenetext \
+	python infer.py
