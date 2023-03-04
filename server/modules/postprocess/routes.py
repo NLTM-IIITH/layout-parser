@@ -12,21 +12,6 @@ router = APIRouter(
 )
 
 @router.post(
-	'/language/scenetext',
-	response_model=list[SIResponse],
-	response_model_exclude_none=True,
-)
-def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
-	"""
-	This is the endpoint for classifying the language of the **REAL** Scenetext images.
-	this model works for all the 14 language (13 Indian + english)
-	"""
-	tmp = TemporaryDirectory(prefix='st_language_classify')
-	process_images(si_request.images, tmp.name)
-	call(f'./lang_iden_scenetext_v1.sh {tmp.name}', shell=True)
-	return process_layout_output(tmp.name)
-
-@router.post(
 	'/language/printed',
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
@@ -36,9 +21,39 @@ def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	This is the endpoint for classifying the language of the **printed** images.
 	this model works for all the 14 language (13 Indian + english)
 	"""
-	tmp = TemporaryDirectory(prefix='st_language_classify')
+	tmp = TemporaryDirectory(prefix='language_classify')
 	process_images(si_request.images, tmp.name)
 	call(f'./lang_iden_printed_v1.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
+	'/language/handwritten',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
+	"""
+	This is the endpoint for classifying the language of the **printed** images.
+	this model works for all the 14 language (13 Indian + english)
+	"""
+	tmp = TemporaryDirectory(prefix='language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_handwritten_v1.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
+	'/language/scenetext',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
+	"""
+	This is the endpoint for classifying the language of the **REAL** Scenetext images.
+	this model works for all the 14 language (13 Indian + english)
+	"""
+	tmp = TemporaryDirectory(prefix='language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_scenetext_v1.sh {tmp.name}', shell=True)
 	return process_layout_output(tmp.name)
 
 
@@ -57,7 +72,7 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 	Currently 8 recognized languages are [**hindi, telugu, tamil, gujarati,
 	punjabi, urdu, bengali, english**]
 	"""
-	tmp = TemporaryDirectory(prefix='st_language_classify')
+	tmp = TemporaryDirectory(prefix='st_script')
 	process_images(si_request.images, tmp.name)
 	call(f'./script_iden_v1.sh {tmp.name}', shell=True)
 	return process_layout_output(tmp.name)
