@@ -16,10 +16,13 @@ router = APIRouter(
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_printed_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **printed** images.
 	this model works for all the 14 language (13 Indian + english)
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
 	"""
 	tmp = TemporaryDirectory(prefix='language_classify')
 	process_images(si_request.images, tmp.name)
@@ -31,10 +34,13 @@ def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
-	This is the endpoint for classifying the language of the **printed** images.
+	This is the endpoint for classifying the language of the **handwritten** images.
 	this model works for all the 14 language (13 Indian + english)
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
 	"""
 	tmp = TemporaryDirectory(prefix='language_classify')
 	process_images(si_request.images, tmp.name)
@@ -46,10 +52,13 @@ def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_scenetext_language(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **REAL** Scenetext images.
 	this model works for all the 14 language (13 Indian + english)
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
 	"""
 	tmp = TemporaryDirectory(prefix='language_classify')
 	process_images(si_request.images, tmp.name)
@@ -71,6 +80,9 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 
 	Currently 8 recognized languages are [**hindi, telugu, tamil, gujarati,
 	punjabi, urdu, bengali, english**]
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
 	"""
 	tmp = TemporaryDirectory(prefix='st_script')
 	process_images(si_request.images, tmp.name)
@@ -83,11 +95,14 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 	response_model=list[MIResponse],
 	response_model_exclude_none=True,
 )
-def identify_language(si_request: PostprocessRequest) -> list[MIResponse]:
+def identify_modality(si_request: PostprocessRequest) -> list[MIResponse]:
 	"""
 	This is the endpoint for classifying the modality of the images.
 	this model works for all the 14 language (13 Indian + english) and
 	outputs among 3 classes ["**printed**", "**handwritten**", "**scenetext**"]
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **modality** as value
 	"""
 	tmp = TemporaryDirectory(prefix='modality_classify')
 	process_images(si_request.images, tmp.name)
