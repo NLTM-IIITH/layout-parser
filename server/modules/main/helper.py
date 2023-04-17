@@ -26,13 +26,14 @@ t = time.time()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
-state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
-
-new_state_dict = OrderedDict()
-for k, v in state_dict.items():
-	name = k[7:] # remove `module.`
-	new_state_dict[name] = v
-PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
+if os.path.exists('/home/layout/models/v2_doctr/model.pt'):
+	state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
+	
+	new_state_dict = OrderedDict()
+	for k, v in state_dict.items():
+		name = k[7:] # remove `module.`
+		new_state_dict[name] = v
+	PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
 logtime(t, 'Time taken to load the doctr model')
 
 
