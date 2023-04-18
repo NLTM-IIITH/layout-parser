@@ -23,9 +23,25 @@ router = APIRouter(
 @router.post('/', response_model=List[LayoutImageResponse])
 async def doctr_layout_parser(
 	folder_path: str = Depends(save_uploaded_images),
-	model: ModelChoice = Form(ModelChoice.doctr),
-	polygon: bool = Form(False),
-	dilate: bool = Form(False),
+	model: ModelChoice = Form(
+		ModelChoice.doctr,
+		description='Choice of the model for Layout parser'
+	),
+	polygon: bool = Form(
+		False,
+		description=(
+			'Specifies to the API whether to output in '
+			'Polygon points format or rectangular bbox format'
+		)
+	),
+	dilate: bool = Form(
+		False,
+		description=(
+			'Specifies whether to expand the bboxes to accomodate '
+			'all the intersecting foreground text. This option is '
+			'only available if you request output in rectangular bbox format'
+		)
+	),
 ):
 	"""
 	API endpoint for calling the layout parser

@@ -3,12 +3,17 @@ import shutil
 from os.path import join
 from typing import List
 
-from fastapi import UploadFile
+from fastapi import File, UploadFile
 
 from ..core.config import IMAGE_FOLDER
 
 
-def save_uploaded_images(images: List[UploadFile]) -> str:
+def save_uploaded_images(
+	images: List[UploadFile] = File(
+		...,
+		description='Upload a list of images to process'
+	)
+) -> str:
 	print('removing all the previous uploaded files from the image folder')
 	os.system(f'rm -rf {IMAGE_FOLDER}/*')
 	print(f'Saving {len(images)} to location: {IMAGE_FOLDER}')
