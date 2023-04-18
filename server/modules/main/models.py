@@ -35,6 +35,22 @@ class BoundingBox(BaseModel):
 		)
 
 
+class Point(BaseModel):
+	x: int
+	y: int
+
+	def __init__(self, x: int, y: int):
+		return super().__init__(x=x, y=y)
+
+class PolygonRegion(BaseModel):
+	points: list[Point]
+	label: Optional[str] = ''
+	line: Optional[int] = Field(
+		0,
+		description='Stores the sequential line number of the para text starting from 1'
+	)
+
+
 class Region(BaseModel):
 	bounding_box: BoundingBox
 	label: Optional[str] = ''
