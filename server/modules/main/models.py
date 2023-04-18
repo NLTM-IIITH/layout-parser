@@ -33,6 +33,14 @@ class BoundingBox(BaseModel):
 			w=coords[2] - coords[0],
 			h=coords[3] - coords[1]
 		)
+	
+	def to_polygon(self) -> 'list[Point]':
+		return [
+			Point(self.x, self.y),
+			Point(self.x + self.w, self.y),
+			Point(self.x + self.w, self.y + self.h),
+			Point(self.x, self.y + self.h),
+		]
 
 
 class Point(BaseModel):
@@ -67,6 +75,13 @@ class Region(BaseModel):
 			self.bounding_box.y + self.bounding_box.h
 		)
 
+	def to_polygon(self) -> PolygonRegion:
+		return PolygonRegion(
+			points=self.bounding_box.to_polygon(),
+			label=self.label,
+			line=self.line
+		)
+
 	@classmethod
 	def from_xyxy(cls, coords: tuple[int, int, int, int], label='', line=0):
 		return cls.from_bounding_box(
@@ -96,4 +111,4 @@ class LayoutImageResponse(BaseModel):
 	Model class for holding the layout response for one single image
 	"""
 	image_name: str
-	regions: List[Region]
+	regions: List[Region | PolygonRegion]
