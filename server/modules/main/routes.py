@@ -24,6 +24,7 @@ router = APIRouter(
 async def doctr_layout_parser(
 	folder_path: str = Depends(save_uploaded_images),
 	model: ModelChoice = Form(ModelChoice.doctr),
+	polygon: bool = Form(False),
 	dilate: bool = Form(False),
 ):
 	"""
@@ -38,7 +39,9 @@ async def doctr_layout_parser(
 		ret = process_multiple_image_doctr(folder_path)
 	elif model == ModelChoice.v2_doctr:
 		ret = process_multiple_image_doctr_v2(folder_path)
-	if dilate:
+	if polygon:
+		ret = [i.to_polygon() for i in ret]
+	if dilate and not polygon:
 		ret = process_multiple_dilate(ret)
 	return ret
 

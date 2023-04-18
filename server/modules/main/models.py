@@ -112,3 +112,15 @@ class LayoutImageResponse(BaseModel):
 	"""
 	image_name: str
 	regions: List[Region | PolygonRegion]
+
+	def to_polygon(self) -> 'LayoutImageResponse':
+		ret = []
+		for region in self.regions:
+			if type(region) == Region:
+				ret.append(region.to_polygon())
+			else:
+				ret.append(region)
+		return LayoutImageResponse(
+			image_name=self.image_name,
+			regions=ret
+		)
