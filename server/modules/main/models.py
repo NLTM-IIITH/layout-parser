@@ -9,6 +9,7 @@ class ModelChoice(str, Enum):
 	craft = 'craft'
 	v2_doctr = 'v2_doctr'
 	worddetector = 'worddetector'
+	textpms = 'textpms'
 
 
 class BoundingBox(BaseModel):
@@ -57,6 +58,17 @@ class PolygonRegion(BaseModel):
 		0,
 		description='Stores the sequential line number of the para text starting from 1'
 	)
+
+	@classmethod
+	def from_points(cls, points: list[tuple[int, int]], label='', line=0):
+		"""
+		construct a Region class from the bounding box class
+		"""
+		return cls(
+			points=[Point(*i) for i in points],
+			label=label,
+			line=line,
+		)
 
 
 class Region(BaseModel):

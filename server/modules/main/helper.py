@@ -3,9 +3,8 @@ import shutil
 import time
 import uuid
 from collections import OrderedDict
-from os.path import join
+from os.path import basename, join
 from subprocess import check_output, run
-from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
 import torch
@@ -109,9 +108,8 @@ def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 	ret = []
 	t = time.time()
 	for file in files:
-		# TODO: add the proper error detection if the txt file is not found
-		# image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
-		img_name = os.path.basename(file).strip()[4:].replace('.txt', '')
+		# [4:] is added because craft prefix the text filenames with res_
+		img_name = basename(file).strip()[4:].replace('.txt', '')
 		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
 		print(image_name)
 		a = open(file, 'r').read().strip()
@@ -142,6 +140,54 @@ def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 	logtime(t, 'Time took to process the output of the craft docker')
 	return ret
 
+def run_textpms_container():
+	run([
+		'docker',
+		'run', '-it', '--rm',
+		'--name=parser-textpms',
+		'--gpus', 'all',
+		'-v', f'{IMAGE_FOLDER}:/data',
+		'-v', f'/home/layout/models/TextPMs:/model:ro',
+		'parser:textpms',
+		'python', 'infer.py'
+	])
+
+
+def process_multiple_image_textpms(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	Given a path to the folder if images, this function returns a list
+	of word level bounding boxes of all the images
+	"""
+	t = time.time()
+	run_textpms_container()
+	logtime(t, 'Time took to run the textpms docker container')
+	img_files = [i for i in os.listdir(folder_path) if not i.endswith('txt')]
+	files = [join(folder_path, i) for i in os.listdir(folder_path) if i.endswith('txt')]
+	ret = []
+	t = time.time()
+	for file in files:
+		img_name = basename(file).strip().replace('.txt', '')
+		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
+		print(image_name)
+		a = open(file, 'r').read().strip().split('\n')
+		a = [i.strip() for i in a]
+		regions = []
+		for i in a:
+			# i is in the format x,y;x,y;x,y...
+			regions.append(
+				PolygonRegion.from_points(
+					points=[tuple(map(int, j.split(','))) for j in i.split(';')]
+				)
+			)
+		ret.append(
+			LayoutImageResponse(
+				image_name=image_name,
+				regions=regions.copy()
+			)
+		)
+	logtime(t, 'Time took to process the output of the craft docker')
+	return ret
+
 
 def process_multiple_image_worddetector(folder_path: str) -> List[LayoutImageResponse]:
 	"""
@@ -157,9 +203,7 @@ def process_multiple_image_worddetector(folder_path: str) -> List[LayoutImageRes
 	ret = []
 	t = time.time()
 	for file in files:
-		# TODO: add the proper error detection if the txt file is not found
-		# image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
-		img_name = os.path.basename(file).strip()[4:].replace('.txt', '')
+		img_name = basename(file).strip()[4:].replace('.txt', '')
 		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
 		print(image_name)
 		a = open(file, 'r').read().strip()
@@ -230,7 +274,7 @@ def process_multiple_image_doctr(folder_path: str) -> List[LayoutImageResponse]:
 		ret.append(
 			LayoutImageResponse(
 				regions=regions.copy(),
-				image_name=os.path.basename(files[idx])
+				image_name=basename(files[idx])
 			)
 		)
 	logtime(t, 'Time taken to process the doctr output')
@@ -275,7 +319,7 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 		ret.append(
 			LayoutImageResponse(
 				regions=regions.copy(),
-				image_name=os.path.basename(files[idx])
+				image_name=basename(files[idx])
 			)
 		)
 	logtime(t, 'Time taken to process the doctr output')
