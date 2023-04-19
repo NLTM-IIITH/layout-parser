@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 
@@ -69,6 +70,11 @@ class PolygonRegion(BaseModel):
 			label=label,
 			line=line,
 		)
+
+	def to_polylines_pts(self):
+		ret = [[i.x, i.y] for i in self.points]
+		ret = np.array(ret)
+		return ret.reshape(-1, 1, 2)
 
 
 class Region(BaseModel):
