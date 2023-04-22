@@ -5,6 +5,7 @@ from fastapi import APIRouter
 
 from .helper import process_images, process_layout_output
 from .models import MIResponse, PostprocessRequest, SIResponse
+from typing import List
 
 router = APIRouter(
 	prefix='/layout/postprocess',
@@ -13,10 +14,10 @@ router = APIRouter(
 
 @router.post(
 	'/language/printed',
-	response_model=list[SIResponse],
+	response_model=List[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_printed_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_printed_language(si_request: PostprocessRequest) -> List[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **printed** images.
 	this model works for all the 14 language (13 Indian + english)
@@ -31,10 +32,10 @@ def identify_printed_language(si_request: PostprocessRequest) -> list[SIResponse
 
 @router.post(
 	'/language/handwritten',
-	response_model=list[SIResponse],
+	response_model=List[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_handwritten_language(si_request: PostprocessRequest) -> List[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **handwritten** images.
 	this model works for all the 14 language (13 Indian + english)
@@ -49,10 +50,10 @@ def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResp
 
 @router.post(
 	'/language/scenetext',
-	response_model=list[SIResponse],
+	response_model=List[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_scenetext_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_scenetext_language(si_request: PostprocessRequest) -> List[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **REAL** Scenetext images.
 	this model works for all the 14 language (13 Indian + english)
@@ -68,10 +69,10 @@ def identify_scenetext_language(si_request: PostprocessRequest) -> list[SIRespon
 
 @router.post(
 	'/script',
-	response_model=list[SIResponse],
+	response_model=List[SIResponse],
 	response_model_exclude_none=True
 )
-def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_script(si_request: PostprocessRequest) -> List[SIResponse]:
 	"""
 	This is an endpoint for identifying the script of the word images.
 	this model was contributed by **Punjab university (@Ankur)** on 07-10-2022
@@ -92,10 +93,10 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 
 @router.post(
 	'/modality',
-	response_model=list[MIResponse],
+	response_model=List[MIResponse],
 	response_model_exclude_none=True,
 )
-def identify_modality(si_request: PostprocessRequest) -> list[MIResponse]:
+def identify_modality(si_request: PostprocessRequest) -> List[MIResponse]:
 	"""
 	This is the endpoint for classifying the modality of the images.
 	this model works for all the 14 language (13 Indian + english) and

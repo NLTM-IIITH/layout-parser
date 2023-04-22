@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field
+from typing import List
 
 # SI stands for Script Identification
 
 class PostprocessRequest(BaseModel):
-	images: list[str] = Field(
+	images: List[str] = Field(
 		...,
 		description='List of images in base64 format'
 	)

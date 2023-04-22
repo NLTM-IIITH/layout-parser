@@ -6,9 +6,9 @@ from os.path import join
 from fastapi import HTTPException
 
 from .models import ClassifyResponse
+from typing import List
 
-
-def process_images(images: list[str], path: str='/home/layout/layout-parser/images'):
+def process_images(images: List[str], path: str='/home/layout/layout-parser/images'):
 	"""
 	processes all the images in the given list.
 	it saves all the images in the /home/ocr/website/images folder and
@@ -37,7 +37,7 @@ def process_images(images: list[str], path: str='/home/layout/layout-parser/imag
 
 def process_layout_output(
 	path: str = '/home/layout/layout-parser/images'
-) -> list[ClassifyResponse]:
+) -> List[ClassifyResponse]:
 	"""
 	process the ./images/out.json file and returns the ocr response.
 	"""

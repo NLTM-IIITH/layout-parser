@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Tuple, Optional
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -28,7 +28,7 @@ class BoundingBox(BaseModel):
 	)
 
 	@classmethod
-	def from_xyxy(cls, coords: tuple[int, int, int, int]) -> 'BoundingBox':
+	def from_xyxy(cls, coords: Tuple[int, int, int, int]) -> 'BoundingBox':
 		return cls(
 			x=coords[0],
 			y=coords[1],
@@ -85,7 +85,7 @@ class Region(BaseModel):
 		description='Stores the sequential line number of the para text starting from 1'
 	)
 
-	def to_xyxy(self) -> tuple[int, int, int, int]:
+	def to_xyxy(self) -> Tuple[int, int, int, int]:
 		return (
 			self.bounding_box.x,
 			self.bounding_box.y,
@@ -101,7 +101,7 @@ class Region(BaseModel):
 		)
 
 	@classmethod
-	def from_xyxy(cls, coords: tuple[int, int, int, int], label='', line=0):
+	def from_xyxy(cls, coords: Tuple[int, int, int, int], label='', line=0):
 		return cls.from_bounding_box(
 			bbox=BoundingBox.from_xyxy(coords),
 			label=label,
