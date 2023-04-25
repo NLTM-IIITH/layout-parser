@@ -22,6 +22,10 @@ def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
 
 t = time.time()
+PREDICTOR = ocr_predictor(pretrained=True)
+logtime(t, 'Time taken to load the doctr model')
+
+t = time.time()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
@@ -32,7 +36,7 @@ for k, v in state_dict.items():
 	name = k[7:] # remove `module.`
 	new_state_dict[name] = v
 PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
-logtime(t, 'Time taken to load the doctr model')
+logtime(t, 'Time taken to load the v2_doctr model')
 
 
 def save_uploaded_image(image: UploadFile) -> str:
@@ -242,15 +246,11 @@ def process_multiple_image_doctr(folder_path: str) -> List[LayoutImageResponse]:
 
 	@returns list of BoundingBox class
 	"""
-	t = time.time()
-	predictor = ocr_predictor(pretrained=True)
-	logtime(t, 'Time taken to load the doctr model')
-
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	doc = DocumentFile.from_images(files)
 
 	t = time.time()
-	a = predictor(doc)
+	a = PREDICTOR(doc)
 	logtime(t, 'Time taken to perform doctr inference')
 
 	t = time.time()
@@ -339,8 +339,7 @@ def process_image(image_path: str, model: str='doctr') -> List[Region]:
 	t = time.time()
 	if model == 'doctr':
 		print('performing doctr')
-		predictor = ocr_predictor(pretrained=True)
-		a = predictor(doc)
+		a = PREDICTOR(doc)
 	else:
 		print('performing v2_doctr')
 		a = PREDICTOR_V2(doc)
