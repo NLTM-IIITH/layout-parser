@@ -8,6 +8,7 @@ from subprocess import check_output, run
 from typing import List, Tuple
 
 import torch
+import numpy as np
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from fastapi import UploadFile
@@ -437,3 +438,57 @@ def process_image_worddetector(image_path: str) -> List[Region]:
 				)
 			)
 	return ret
+
+def process_image_dbnet(image_path: str) -> List[Region]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+	print('running dbnet model for image...', end='')
+	t = time.time()
+	command = f'docker run -it --rm --gpus all -v {IMAGE_FOLDER}:/data parser:dbnet' \
+			  f'containers/run-dbnet.sh /data/dbnet'
+	check_output(command, shell=True)
+	logtime(t, "Time taken by dbnet")
+
+	t = time.time()
+	#viz_output=os.path.join(IMAGE_FOLDER, "dbnet", "viz_output")
+	ret = []
+	#for file in os.listdir(viz_output):
+	for file in os.listdir(IMAGE_FOLDER):
+		if file.endswith('txt') is False:
+			continue
+		image = f'{file.split(".")[0].split("_")[1]}.jpeg'
+		with open(os.path.join(IMAGE_FOLDER, file), 'r') as f:
+			lines = f.readlines()
+		out = []
+		for line in lines:
+			l = line.strip('\n').split(',')[:-1]
+			l = [int(k) for k in l]
+			out.append(l)
+		regions = []
+		for idx, box in enumerate(out):
+			x = box[0]
+			y = box[1]
+			w = box[2] - x
+			h = box[7] - y
+			#print(f"Box{idx} = {box}, shape = {np.shape(box)}, x = {x}, y = {y}, h = {h}, w = {w}")
+			regions.append(
+				Region.from_bounding_box(
+					BoundingBox(
+						x=x,
+						y=y,
+						h=h,
+						w=w
+					),
+					line=idx + 1
+				)
+			)
+		ret.append(LayoutImageResponse(image_name=image,
+									   regions=regions.copy()))
+	logtime(t, "Post-processing time for all images")
+	print("Done.")
+	return ret
+

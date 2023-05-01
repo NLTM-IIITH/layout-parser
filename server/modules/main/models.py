@@ -11,6 +11,7 @@ class ModelChoice(str, Enum):
 	v2_doctr = 'v2_doctr'
 	worddetector = 'worddetector'
 	textpms = 'textpms'
+	dbnet = 'dbnet'
 
 
 class BoundingBox(BaseModel):
