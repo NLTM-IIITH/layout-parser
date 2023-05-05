@@ -14,6 +14,7 @@ from doctr.models import ocr_predictor
 from fastapi import UploadFile
 
 from ..core.config import IMAGE_FOLDER
+from ..core.config import DATA_FOLDER
 from .models import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
@@ -448,8 +449,8 @@ def process_image_dbnet(image_path: str) -> List[Region]:
 	"""
 	print('running dbnet model for image...', end='')
 	t = time.time()
-	command = f'docker run -it --rm --gpus all -v {IMAGE_FOLDER}:/data parser:dbnet' \
-			  f'containers/run-dbnet.sh /data/dbnet'
+	command = f'docker run -it --rm --gpus all -v {DATA_FOLDER}:/data -v {IMAGE_FOLDER}:/images ' \
+            f'parser:dbnet containers/run-dbnet.sh /data/dbnet /images'
 	check_output(command, shell=True)
 	logtime(t, "Time taken by dbnet")
 
