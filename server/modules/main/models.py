@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Union, Optional
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -36,7 +36,7 @@ class BoundingBox(BaseModel):
 			h=coords[3] - coords[1]
 		)
 	
-	def to_polygon(self) -> 'list[Point]':
+	def to_polygon(self) -> 'List[Point]':
 		return [
 			Point(self.x, self.y),
 			Point(self.x + self.w, self.y),
@@ -53,7 +53,7 @@ class Point(BaseModel):
 		return super().__init__(x=x, y=y)
 
 class PolygonRegion(BaseModel):
-	points: list[Point]
+	points: List[Point]
 	label: Optional[str] = ''
 	line: Optional[int] = Field(
 		0,
@@ -61,7 +61,7 @@ class PolygonRegion(BaseModel):
 	)
 
 	@classmethod
-	def from_points(cls, points: list[tuple[int, int]], label='', line=0):
+	def from_points(cls, points: List[Tuple[int, int]], label='', line=0):
 		"""
 		construct a Region class from the bounding box class
 		"""
@@ -129,7 +129,7 @@ class LayoutImageResponse(BaseModel):
 	Model class for holding the layout response for one single image
 	"""
 	image_name: str
-	regions: List[Region | PolygonRegion]
+	regions: List[Union[Region, PolygonRegion]]
 
 	def to_polygon(self) -> 'LayoutImageResponse':
 		ret = []
