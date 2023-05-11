@@ -12,7 +12,8 @@ from .helper import (process_image, process_image_craft,
                      process_multiple_image_doctr,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_textpms,
-                     process_multiple_image_worddetector, save_uploaded_image)
+					 process_multiple_image_worddetector,
+					 process_image_dbnet, save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 
@@ -59,6 +60,8 @@ async def doctr_layout_parser(
 		ret = process_multiple_image_doctr_v2(folder_path)
 	elif model == ModelChoice.textpms:
 		ret = process_multiple_image_textpms(folder_path)
+	elif model == ModelChoice.dbnet:
+		ret = process_image_dbnet(folder_path)
 	if polygon:
 		ret = [i.to_polygon() for i in ret]
 	if dilate and not polygon:

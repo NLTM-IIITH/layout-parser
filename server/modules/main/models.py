@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Tuple, Union, Optional
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -11,6 +11,7 @@ class ModelChoice(str, Enum):
 	v2_doctr = 'v2_doctr'
 	worddetector = 'worddetector'
 	textpms = 'textpms'
+	dbnet = 'dbnet'
 
 
 class BoundingBox(BaseModel):
@@ -28,7 +29,7 @@ class BoundingBox(BaseModel):
 	)
 
 	@classmethod
-	def from_xyxy(cls, coords: tuple[int, int, int, int]) -> 'BoundingBox':
+	def from_xyxy(cls, coords: Tuple[int, int, int, int]) -> 'BoundingBox':
 		return cls(
 			x=coords[0],
 			y=coords[1],
@@ -36,7 +37,7 @@ class BoundingBox(BaseModel):
 			h=coords[3] - coords[1]
 		)
 	
-	def to_polygon(self) -> 'list[Point]':
+	def to_polygon(self) -> 'List[Point]':
 		return [
 			Point(self.x, self.y),
 			Point(self.x + self.w, self.y),
@@ -53,7 +54,7 @@ class Point(BaseModel):
 		return super().__init__(x=x, y=y)
 
 class PolygonRegion(BaseModel):
-	points: list[Point]
+	points: List[Point]
 	label: Optional[str] = ''
 	line: Optional[int] = Field(
 		0,
@@ -61,7 +62,7 @@ class PolygonRegion(BaseModel):
 	)
 
 	@classmethod
-	def from_points(cls, points: list[tuple[int, int]], label='', line=0):
+	def from_points(cls, points: List[Tuple[int, int]], label='', line=0):
 		"""
 		construct a Region class from the bounding box class
 		"""
@@ -85,7 +86,7 @@ class Region(BaseModel):
 		description='Stores the sequential line number of the para text starting from 1'
 	)
 
-	def to_xyxy(self) -> tuple[int, int, int, int]:
+	def to_xyxy(self) -> Tuple[int, int, int, int]:
 		return (
 			self.bounding_box.x,
 			self.bounding_box.y,
@@ -101,7 +102,7 @@ class Region(BaseModel):
 		)
 
 	@classmethod
-	def from_xyxy(cls, coords: tuple[int, int, int, int], label='', line=0):
+	def from_xyxy(cls, coords: Tuple[int, int, int, int], label='', line=0):
 		return cls.from_bounding_box(
 			bbox=BoundingBox.from_xyxy(coords),
 			label=label,
@@ -129,7 +130,7 @@ class LayoutImageResponse(BaseModel):
 	Model class for holding the layout response for one single image
 	"""
 	image_name: str
-	regions: List[Region | PolygonRegion]
+	regions: List[Union[Region, PolygonRegion]]
 
 	def to_polygon(self) -> 'LayoutImageResponse':
 		ret = []
