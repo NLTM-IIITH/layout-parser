@@ -7,14 +7,13 @@ from os.path import basename, join
 from subprocess import check_output, run
 from typing import List, Tuple
 
-import torch
 import numpy as np
+import torch
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from fastapi import UploadFile
 
-from ..core.config import IMAGE_FOLDER
-from ..core.config import DATA_FOLDER
+from ..core.config import DATA_FOLDER, IMAGE_FOLDER
 from .models import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
@@ -25,6 +24,7 @@ def logtime(t: float, msg:  str) -> None:
 
 t = time.time()
 PREDICTOR = ocr_predictor(pretrained=True)
+# PREDICTOR = None
 logtime(t, 'Time taken to load the doctr model')
 
 t = time.time()
@@ -292,40 +292,42 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 	@returns list of BoundingBox class
 	"""
 
-	files = [join(folder_path, i) for i in os.listdir(folder_path)]
-	t = time.time()
-	doc = DocumentFile.from_images(files)
-	logtime(t, 'Time taken to load all the images')
-
-	t = time.time()
-	a = PREDICTOR_V2(doc)
-	logtime(t, 'Time taken to perform doctr inference')
-
-	t = time.time()
+	all_files = [join(folder_path, i) for i in os.listdir(folder_path)]
+	batch_files = [all_files[i:i+20] for i in range(0,len(all_files),20)]
 	ret = []
-	for idx in range(len(files)):
-		page = a.pages[idx]
-		# in the format (height, width)
-		dim = page.dimensions
-		lines = []
-		for i in page.blocks:
-			lines += i.lines
-		regions = []
-		for i, line in enumerate(lines):
-			for word in line.words:
-				regions.append(
-					Region.from_bounding_box(
-						convert_geometry_to_bbox(word.geometry, dim, padding=5),
-						line=i+1,
+	for files in batch_files:
+		t = time.time()
+		doc = DocumentFile.from_images(files)
+		logtime(t, 'Time taken to load 20 images')
+
+		t = time.time()
+		a = PREDICTOR_V2(doc)
+		logtime(t, 'Time taken to perform doctr inference')
+
+		t = time.time()
+		for idx in range(len(files)):
+			page = a.pages[idx]
+			# in the format (height, width)
+			dim = page.dimensions
+			lines = []
+			for i in page.blocks:
+				lines += i.lines
+			regions = []
+			for i, line in enumerate(lines):
+				for word in line.words:
+					regions.append(
+						Region.from_bounding_box(
+							convert_geometry_to_bbox(word.geometry, dim, padding=5),
+							line=i+1,
+						)
 					)
+			ret.append(
+				LayoutImageResponse(
+					regions=regions.copy(),
+					image_name=basename(files[idx])
 				)
-		ret.append(
-			LayoutImageResponse(
-				regions=regions.copy(),
-				image_name=basename(files[idx])
 			)
-		)
-	logtime(t, 'Time taken to process the doctr output')
+		logtime(t, 'Time taken to process the doctr output')
 	return ret
 
 
