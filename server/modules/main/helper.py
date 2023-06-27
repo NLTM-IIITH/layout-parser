@@ -293,12 +293,12 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 	"""
 
 	all_files = [join(folder_path, i) for i in os.listdir(folder_path)]
-	batch_files = [all_files[i:i+20] for i in range(0,len(all_files),20)]
+	batch_files = [all_files[i:i+30] for i in range(0,len(all_files),30)]
 	ret = []
 	for files in batch_files:
 		t = time.time()
 		doc = DocumentFile.from_images(files)
-		logtime(t, 'Time taken to load 20 images')
+		logtime(t, 'Time taken to load 30 images')
 
 		t = time.time()
 		a = PREDICTOR_V2(doc)

@@ -1,11 +1,11 @@
 from subprocess import call
 from tempfile import TemporaryDirectory
+from typing import List
 
 from fastapi import APIRouter
 
 from .helper import process_images, process_layout_output
 from .models import MIResponse, PostprocessRequest, SIResponse
-from typing import List
 
 router = APIRouter(
 	prefix='/layout/postprocess',
