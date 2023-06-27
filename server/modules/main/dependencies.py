@@ -13,7 +13,7 @@ def save_uploaded_images(
 	images: List[UploadFile],
 	model: str,
 ):
-	if model != 'craft':
+	if model not in ['craft', 'dbnet']:
 		print('removing all the previous uploaded files from the image folder')
 		tmp = TemporaryDirectory(prefix='images')
 		print(f'Saving {len(images)} to location: {tmp.name}')

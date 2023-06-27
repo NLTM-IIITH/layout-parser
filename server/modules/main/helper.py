@@ -442,7 +442,7 @@ def process_image_worddetector(image_path: str) -> List[Region]:
 			)
 	return ret
 
-def process_image_dbnet(image_path: str) -> List[Region]:
+def process_image_dbnet(image_path: str) -> List[LayoutImageResponse]:
 	"""
 	given the path of the image, this function returns a list
 	of bounding boxes of all the word detected regions.
@@ -489,8 +489,10 @@ def process_image_dbnet(image_path: str) -> List[Region]:
 					line=idx + 1
 				)
 			)
-		ret.append(LayoutImageResponse(image_name=image,
-									   regions=regions.copy()))
+		ret.append(LayoutImageResponse(
+			image_name=image,
+			regions=regions.copy()
+		))
 	logtime(t, "Post-processing time for all images")
 	print("Done.")
 	return ret

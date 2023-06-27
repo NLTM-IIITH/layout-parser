@@ -1,10 +1,9 @@
 import os
 import uuid
-from tempfile import TemporaryDirectory
 from typing import List
 
 import cv2
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
 from .dependencies import save_uploaded_images
@@ -53,7 +52,7 @@ async def doctr_layout_parser(
 	API endpoint for calling the layout parser
 	"""
 	print(model.value)
-	if model.value == 'craft':
+	if model.value in ['craft', 'dbnet']:
 		folder_path = save_uploaded_images(images, model.value)
 	else:
 		tmp = save_uploaded_images(images, model.value)
@@ -112,6 +111,9 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_craft(image_path)
 	elif model == ModelChoice.worddetector:
 		regions = process_image_worddetector(image_path)
+	elif model == ModelChoice.dbnet:
+		regions = process_image_dbnet('/home/layout/layout-parser/images')
+		regions = regions[0].regions
 	elif model == ModelChoice.textpms:
 		regions = process_multiple_image_textpms(os.path.dirname(image_path))
 		regions = regions[0].regions
@@ -120,18 +122,18 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image(image_path, model.value)
 	if dilate and not polygon:
 		# dilate is only valid for rectangular bbox
-		regions = process_dilate(regions, image_path)
+		regions = process_dilate(regions, image_path) # type: ignore
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
 		str(uuid.uuid4())
 	)
 	if polygon:
 		img = cv2.imread(image_path)
 		for i in regions:
-			pts = i.to_polylines_pts()
+			pts = i.to_polylines_pts() # type: ignore
 			cv2.polylines(img, [pts], True, (0,0,255), 3)
 	else:
 		# TODO: all the lines after this can be transfered to the helper.py file
-		bboxes = [i.bounding_box for i in regions]
+		bboxes = [i.bounding_box for i in regions] # type: ignore
 		bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
 		img = cv2.imread(image_path)
 		count = 1
