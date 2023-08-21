@@ -9,7 +9,7 @@ class ModelChoice(str, Enum):
 	craft = 'craft'
 	v2_doctr = 'v2_doctr'
 	worddetector = 'worddetector'
-	v2_docTR_readingOrder = 'readingOrder_docTRv2'
+	v2_docTR_readingOrder = 'v2_docTR_readingOrder'
 
 
 class BoundingBox(BaseModel):
