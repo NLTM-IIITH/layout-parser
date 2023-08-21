@@ -15,6 +15,7 @@ from fastapi import UploadFile
 
 from ..core.config import IMAGE_FOLDER
 from .models import *
+from .readingOrder import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
@@ -394,3 +395,96 @@ def process_image_worddetector(image_path: str) -> List[Region]:
 				)
 			)
 	return ret
+
+####READING ORDER
+def doctr_predictions(directory):
+#     #Gets the predictions from the model
+    
+	doc = DocumentFile.from_images(directory)
+	result = PREDICTOR_V2(doc)
+	dic = result.export()
+	
+	page_dims = [page['dimensions'] for page in dic['pages']]
+	
+	regions = []
+	abs_coords = []
+	
+	regions = [[word for block in page['blocks'] for line in block['lines'] for word in line['words']] for page in dic['pages']]
+	abs_coords = [
+	[[int(round(word['geometry'][0][0] * dims[1])), 
+	int(round(word['geometry'][0][1] * dims[0])), 
+	int(round(word['geometry'][1][0] * dims[1])), 
+	int(round(word['geometry'][1][1] * dims[0]))] for word in words]
+	for words, dims in zip(regions, page_dims)
+	]
+	
+	return abs_coords
+
+def Reading_Order_Generator(image_file):
+
+	pred = doctr_predictions(image_file)
+	df = pd.DataFrame(pred)
+	df = df.T
+	# df = pd.read_json(doctr_file) #commented - to avoid saving doctr output as json
+	# df = df.T #commented - to avoid saving doctr output as json
+	euclidean = pd.DataFrame()
+	kde = pd.DataFrame()
+	calculate_center_points(df, kde)
+	horizontal_neighbors, vertical_neighbors = find_closest_neighbors(kde)
+	x = kde_estimate(horizontal_neighbors)
+	y = kde_estimate(vertical_neighbors)
+	calculate_center_points(df,euclidean)
+	calculate_rightbox(euclidean,x)
+	calculate_leftbox(euclidean,x)
+	calculate_topbox(euclidean,y)
+	calculate_bottombox(euclidean,y)
+	
+	G = create_graphs(euclidean)
+	paragraphs_json = get_paras(G)
+	
+	component = pd.DataFrame()
+	
+	# euclidean = pd.read_csv('connections.csv') #commented - to avoid saving euclidean as csv 
+	# d1 = pd.read_json('paragraph.json') #commented - to avoid saving get_paras() output as json
+	d1 = pd.DataFrame(paragraphs_json)
+	target_components = d1.values.tolist()
+	# print(target_components)
+	image = cv2.imread(image_file)
+	component = recognise_paragraphs(image, target_components, euclidean, image_file)
+	# print(component)
+	min_idx =  minimum_euclidean(component)
+	# print(min_idx)
+	component = paragraph_order(component)
+	# visualise_paragraph_order(image, target_components, euclidean,component)
+	new = pd.DataFrame()
+	sort_order = component.sort_values('Order').index
+	new = component.loc[sort_order]
+	new = new.reset_index(drop=True)
+	new_euclidean = pd.DataFrame()
+	euclidean = word_order(new, euclidean)
+	sort_order = euclidean.sort_values('Order').index
+	new_euclidean = euclidean.loc[sort_order]
+	# print(new_euclidean)
+	new_euclidean = new_euclidean.reset_index(drop=True)
+	# print(new_euclidean)
+	image = cv2.imread(image_file)
+	image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file)
+	# output_path = 'Output.png'
+	# cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
+	# euclidean.to_csv('Euclidean.csv')
+	# print(sort_order)
+	# print(reading_order_json)
+	return reading_order_json
+	# print(new_euclidean)
+
+def process_multiple_pages_ReadingOrderGenerator(folder_path: str): -> List[LayoutImageResponse]
+	files = [join(folder_path, i) for i in os.listdir(folder_path)]
+	ret = []
+	for idx in range(len(files)):
+		reading_order = ReadingOrderGenerator(files[idx])
+		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=os.path.basename(files[idx])))
+
+	logtime(t, 'Time taken to generate Reading Order')
+	return ret		
+		
+	
