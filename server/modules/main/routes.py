@@ -9,7 +9,7 @@ from .dependencies import save_uploaded_images
 from .helper import (process_image, process_image_craft,
                      process_image_worddetector, process_multiple_image_craft,
                      process_multiple_image_doctr,
-                     process_multiple_image_doctr_v2,
+                     process_multiple_image_doctr_v2, process_multiple_pages_ReadingOrderGenerator,
                      process_multiple_image_worddetector, save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
