@@ -38,7 +38,7 @@ async def doctr_layout_parser(
 		ret = process_multiple_image_doctr(folder_path)
 	elif model == ModelChoice.v2_doctr:
 		ret = process_multiple_image_doctr_v2(folder_path)
-	elif model == ModelChoice.docTRv2_readingOrder
+	elif model == ModelChoice.docTRv2_readingOrder:
 		ret = process_multiple_pages_ReadingOrderGenerator(folder_path)
 	if dilate:
 		ret = process_multiple_dilate(ret)
