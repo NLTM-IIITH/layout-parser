@@ -460,9 +460,10 @@ def word_order(component, euclidean):
 
 def reading_order(image,euclidean, image_file):
 
-    reading_order_json = {}
-    reading_order_json['image_name'] = image_file
-    reading_order_json['regions'] = []
+    # reading_order_json = {}
+    # reading_order_json['image_name'] = image_file
+    # reading_order_json['regions'] = []
+    regions=[]
 
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_with_boxes = image_rgb.copy()
@@ -493,9 +494,11 @@ def reading_order(image,euclidean, image_file):
         boxwithOrder['bbox'] = [top_left, bottom_right]
         boxwithOrder['order'] = Order
         boxwithOrder['line_number'] = line_number
-        reading_order_json['regions'].append(boxwithOrder)
+        # reading_order_json['regions'].append(boxwithOrder)
+        regions.append(boxwithOrder)
 
-    return image_with_boxes, reading_order_json
+    # return image_with_boxes, reading_order_json
+    return image_with_boxes, regions
 
 def euclidean_distance1(coord1, coord2):
     point1 = np.array(coord1)
