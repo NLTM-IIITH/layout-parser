@@ -477,7 +477,7 @@ def Reading_Order_Generator(image_file):
 	return reading_order_json
 	# print(new_euclidean)
 
-def process_multiple_pages_ReadingOrderGenerator(folder_path: str): -> List[LayoutImageResponse]
+def process_multiple_pages_ReadingOrderGenerator(folder_path: str): -> List[LayoutImageResponse]:
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	ret = []
 	for idx in range(len(files)):
