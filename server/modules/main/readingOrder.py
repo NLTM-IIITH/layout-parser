@@ -491,9 +491,13 @@ def reading_order(image,euclidean, image_file):
         cv2.putText(image_with_boxes, str(Order), label_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
         # cv2.putText(image_with_boxes, str(line_number), label_position_2, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
         boxwithOrder = {}
-        boxwithOrder['bbox'] = [top_left, bottom_right]
+        boxwithOrder['bounding_box'] = {}
+        boxwithOrder['bounding_box']['x'] = left
+        boxwithOrder['bounding_box']['y'] = top
+        boxwithOrder['bounding_box']['w'] = width
+        boxwithOrder['bounding_box']['h'] = height
         boxwithOrder['order'] = Order
-        boxwithOrder['line_number'] = line_number
+        boxwithOrder['line'] = line_number
         # reading_order_json['regions'].append(boxwithOrder)
         regions.append(boxwithOrder)
 
