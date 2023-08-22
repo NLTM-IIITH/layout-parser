@@ -14,6 +14,7 @@ import pypdfium2 as pdfium
 from typing import Any
 from collections import OrderedDict
 import torch
+import time
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor, detection
 from doctr.utils.visualization import visualize_page
@@ -22,6 +23,7 @@ from torchvision.utils import save_image
 from torchvision.transforms import ToPILImage
 from PIL import Image
 import matplotlib.pyplot as plt
+from scipy.spatial.distance import euclidean
 
 def doctr_predictions(directory):
 #     #Gets the predictions from the model
