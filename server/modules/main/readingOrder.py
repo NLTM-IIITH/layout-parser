@@ -527,36 +527,69 @@ def find_closest_neighbors_para(df):
 
     return vertical
 
+# def find_closest_neighbors(df):
+#     horizontal = []
+#     vertical = []
+#     for index, row in df.iterrows():
+#         current_box = row[['Top', 'Bottom', 'Left', 'Right']].values
+#         distances_horizontal = []
+#         distances_vertical = []
+#         for other_index, other_row in df.iterrows():
+#             if index != other_index:
+#                 other_box = other_row[['Top', 'Bottom', 'Left', 'Right']].values
+#                 distance_left_to_right = euclidean_distance1(current_box[2], other_box[3])
+#                 distance_right_to_left = euclidean_distance1(current_box[3], other_box[2])
+#                 distances_horizontal.extend([distance_left_to_right, distance_right_to_left])
+#         distances_horizontal.sort()
+#         s = sum(distances_horizontal[:6])
+#         a = s/6
+#         horizontal.append(a)
+
+#         for other_index, other_row in df.iterrows():
+#             if index != other_index:
+#                 other_box = other_row[['Top', 'Bottom', 'Left', 'Right']].values
+#                 distance_top_to_bottom = euclidean_distance1(current_box[1], other_box[0])
+#                 distance_bottom_to_top = euclidean_distance1(current_box[0], other_box[1])
+#                 distances_vertical.extend([distance_top_to_bottom, distance_bottom_to_top])
+#         distances_vertical.sort()
+#         v = sum(distances_vertical[:2])
+#         t = v/2
+#         vertical.append(t)
+
+#     return horizontal, vertical
+
+
+#optimized function
 def find_closest_neighbors(df):
     horizontal = []
     vertical = []
-    for index, row in df.iterrows():
-        current_box = row[['Top', 'Bottom', 'Left', 'Right']].values
+
+    box_data = df[['Top', 'Bottom', 'Left', 'Right']].values
+
+    for index, current_box in enumerate(box_data):
         distances_horizontal = []
         distances_vertical = []
-        for other_index, other_row in df.iterrows():
+
+        for other_index, other_box in enumerate(box_data):
             if index != other_index:
-                other_box = other_row[['Top', 'Bottom', 'Left', 'Right']].values
-                distance_left_to_right = euclidean_distance1(current_box[2], other_box[3])
-                distance_right_to_left = euclidean_distance1(current_box[3], other_box[2])
+                distance_left_to_right = euclidean(current_box[2], other_box[3])
+                distance_right_to_left = euclidean(current_box[3], other_box[2])
                 distances_horizontal.extend([distance_left_to_right, distance_right_to_left])
+
+                distance_top_to_bottom = euclidean(current_box[1], other_box[0])
+                distance_bottom_to_top = euclidean(current_box[0], other_box[1])
+                distances_vertical.extend([distance_top_to_bottom, distance_bottom_to_top])
+
         distances_horizontal.sort()
         s = sum(distances_horizontal[:6])
-        a = s/6
-        horizontal.append(a)
+        horizontal.append(s / 6)
 
-        for other_index, other_row in df.iterrows():
-            if index != other_index:
-                other_box = other_row[['Top', 'Bottom', 'Left', 'Right']].values
-                distance_top_to_bottom = euclidean_distance1(current_box[1], other_box[0])
-                distance_bottom_to_top = euclidean_distance1(current_box[0], other_box[1])
-                distances_vertical.extend([distance_top_to_bottom, distance_bottom_to_top])
         distances_vertical.sort()
         v = sum(distances_vertical[:2])
-        t = v/2
-        vertical.append(t)
+        vertical.append(v / 2)
 
     return horizontal, vertical
+
 
 kernel_bandwidth = 0.1
 
