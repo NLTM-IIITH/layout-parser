@@ -38,7 +38,7 @@ class BoundingBox(BaseModel):
 
 class Region(BaseModel):
 	bounding_box: BoundingBox
-	order: Optional[int]
+	order: Optional[int] = -1
 	label: Optional[str] = ''
 	line: Optional[int] = Field(
 		0,
