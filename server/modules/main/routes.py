@@ -138,6 +138,9 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	# 	count += 1
 	image_path = save_uploaded_image(image)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-	img, reading_order = Reading_Order_Generator(image_path)
+	if model == ModelChoice.v2_docTR_readingOrder:
+		img, reading_order = Reading_Order_Generator(image_path)
+	# if dilate:
+	# 	regions = process_dilate(regions, image_path)	
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)
