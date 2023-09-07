@@ -474,14 +474,14 @@ def Reading_Order_Generator(image_file):
 	# euclidean.to_csv('Euclidean.csv')
 	# print(sort_order)
 	# print(reading_order_json)
-	return reading_order_json
+	return image_with_boxes, reading_order_json
 	# print(new_euclidean)
 
-def process_multiple_pages_ReadingOrderGenerator(folder_path: str): -> List[LayoutImageResponse]:
+def process_multiple_pages_ReadingOrderGenerator(folder_path: str) -> List[LayoutImageResponse]:
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	ret = []
 	for idx in range(len(files)):
-		reading_order = ReadingOrderGenerator(files[idx])
+		reading_order_image, reading_order = Reading_Order_Generator(files[idx])
 		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=os.path.basename(files[idx])))
 
 	logtime(t, 'Time taken to generate Reading Order')
