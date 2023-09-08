@@ -99,22 +99,26 @@ async def layout_parser_swagger_only_demo(
 	return FileResponse(save_location)
 
 
-@router.post('/visualizeReadingOrder')
+@router.post('/visualize/readingorder')
 async def layout_parser_swagger_only_demo_Reading_Order(
 	image: UploadFile = File(...),
-	model: ModelChoice = Form(ModelChoice.doctr),
-	dilate: bool = Form(False),
 	left_right_percentage: int = Form(
 		0,
-		description=''
+		ge=0,
+		le=100,
+		description='Left right margins in percent of the total page width'
 	),
 	header_percentage: int = Form(
 		0,
-		description=''
+		ge=0,
+		le=100,
+		description='Header margin in percent of the total page height from top'
 	),
 	footer_percentage: int = Form(
 		0,
-		description=''
+		ge=0,
+		le=100,
+		description='Footer margin in percent of the total page height from bottom'
 	)
 ):
 	"""
@@ -126,9 +130,6 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	"""
 	image_path = save_uploaded_image(image)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-	if model == ModelChoice.v2_docTR_readingOrder:
-		img, reading_order = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage)
-	# if dilate:
-	# 	regions = process_dilate(regions, image_path)	
+	img, _ = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage)
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)
