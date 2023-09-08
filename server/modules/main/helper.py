@@ -420,7 +420,7 @@ def doctr_predictions(directory):
 	
 	return abs_coords
 
-def Reading_Order_Generator(image_file):
+def Reading_Order_Generator(image_file, width_p, header_p, footer_p):
 
 	pred = doctr_predictions(image_file)
 	df = pd.DataFrame(pred)
@@ -450,7 +450,7 @@ def Reading_Order_Generator(image_file):
 	target_components = d1.values.tolist()
 	# print(target_components)
 	image = cv2.imread(image_file)
-	component = recognise_paragraphs(image, target_components, euclidean, image_file)
+	component = recognise_paragraphs(image, target_components, euclidean, image_file, width_p, header_p, footer_p)
 	# print(component)
 	min_idx =  minimum_euclidean(component)
 	# print(min_idx)
@@ -468,7 +468,7 @@ def Reading_Order_Generator(image_file):
 	new_euclidean = new_euclidean.reset_index(drop=True)
 	# print(new_euclidean)
 	image = cv2.imread(image_file)
-	image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file)
+	image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file, header_p, footer_p)
 	# output_path = 'Output.png'
 	# cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
 	# euclidean.to_csv('Euclidean.csv')
@@ -477,11 +477,11 @@ def Reading_Order_Generator(image_file):
 	return image_with_boxes, reading_order_json
 	# print(new_euclidean)
 
-def process_multiple_pages_ReadingOrderGenerator(folder_path: str) -> List[LayoutImageResponse]:
+def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_percentages: int, header_percentage: int, footer_percentage: int) -> List[LayoutImageResponse]:
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	ret = []
 	for idx in range(len(files)):
-		reading_order_image, reading_order = Reading_Order_Generator(files[idx])
+		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage)
 		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=os.path.basename(files[idx])))
 
 	logtime(t, 'Time taken to generate Reading Order')
