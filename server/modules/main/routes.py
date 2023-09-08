@@ -26,6 +26,9 @@ async def doctr_layout_parser(
 	folder_path: str = Depends(save_uploaded_images),
 	model: ModelChoice = Form(ModelChoice.doctr),
 	dilate: bool = Form(False),
+	left_right_percentages: int = Form(0),
+	header_percentage: int = Form(0),
+	footer_percentage: int = Form(0)
 ):
 	"""
 	API endpoint for calling the layout parser
@@ -40,7 +43,7 @@ async def doctr_layout_parser(
 	elif model == ModelChoice.v2_doctr:
 		ret = process_multiple_image_doctr_v2(folder_path)
 	elif model == ModelChoice.v2_docTR_readingOrder:
-		ret = process_multiple_pages_ReadingOrderGenerator(folder_path)
+		ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
@@ -98,6 +101,9 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	image: UploadFile = File(...),
 	model: ModelChoice = Form(ModelChoice.doctr),
 	dilate: bool = Form(False),
+	left_right_percentages: int = Form(0),
+	header_percentage: int = Form(0),
+	footer_percentage: int = Form(0)
 ):
 	"""
 	This endpoint is only used to demonstration purposes.
@@ -139,7 +145,7 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	image_path = save_uploaded_image(image)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
 	if model == ModelChoice.v2_docTR_readingOrder:
-		img, reading_order = Reading_Order_Generator(image_path)
+		img, reading_order = Reading_Order_Generator(image_path, left_right_percentages, header_percentage, footer_percentage)
 	# if dilate:
 	# 	regions = process_dilate(regions, image_path)	
 	cv2.imwrite(save_location, img)
