@@ -228,7 +228,7 @@ def calculate_bottombox_para(new_df):
 
     new_df['Bottom_Box'] = bottom
 
-def recognise_paragraphs(image, target_components, euclidean, image_filename):
+def recognise_paragraphs(image, target_components, euclidean, image_filename, width_p, header_p, footer_p):
 
     #  image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     component = pd.DataFrame()
@@ -290,7 +290,7 @@ def recognise_paragraphs(image, target_components, euclidean, image_filename):
     #  cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
     new_column_names = {0: 'Component', 1: 'Id', 2: 'Top',3: 'Bottom',4: 'Right',5: 'Left',6: 'Bottom_Box',7: 'Visited',8: 'Order'}
     component = component.rename(columns=new_column_names)
-    component = ignore_margins(component, 20, 0, image_filename)
+    component = ignore_margins(component,width_p,header_p,footer_p,image_filename)
     component = component.reset_index(drop=True)
     calculate_bottombox_para(component)
     return component
@@ -460,7 +460,7 @@ def word_order(component, euclidean):
                 line_number+=1
     return euclidean
 
-def reading_order(image,euclidean, image_file):
+def reading_order(image,euclidean, image_file, header_p, footer_p):
 
     # reading_order_json = {}
     # reading_order_json['image_name'] = image_file
@@ -492,6 +492,17 @@ def reading_order(image,euclidean, image_file):
         label_position_2 = (left + 40, top - 10)
         cv2.putText(image_with_boxes, str(Order), label_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
         # cv2.putText(image_with_boxes, str(line_number), label_position_2, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
+        image_height, image_width, _ = image_with_boxes.shape
+        header_percentage = header_p 
+        footer_percentage = footer_p
+
+        header_position = int(image_height * (header_percentage / 100))
+        footer_position = image_height - int(image_height * (footer_percentage / 100))
+
+        cv2.line(image_with_boxes, (0, header_position), (image_width, header_position), (255,255, 0), 2)  # yellow line
+        cv2.line(image_with_boxes, (0, footer_position), (image_width, footer_position), (255, 255, 0), 2)  
+        
         boxwithOrder = {}
         boxwithOrder['bounding_box'] = {}
         boxwithOrder['bounding_box']['x'] = left
@@ -687,14 +698,45 @@ def page_size(image_file):
     height, width, _ = image.shape
     return height, width
 
-def ignore_margins(component, height_p, width_p, image_file):
+# def ignore_margins(component, height_p, width_p, image_file):
+#     height, width = page_size(image_file)
+#     vertical_margin = height*(height_p/100)
+#     horizontal_margin = width*(width_p/100)
+#     for i in range(len(component)):
+#         if((component['Top'][i][1] > height - vertical_margin) and len(component['Component'][i][0])<7):
+#             component = component.drop(i)
+#         elif((component['Bottom'][i][1] < vertical_margin) and len(component['Component'][i][0])<7):
+#             component = component.drop(i)
+#         elif(component['Right'][i][0] < horizontal_margin):
+#             component = component.drop(i)
+#         elif(component['Left'][i][0] > width - horizontal_margin):
+#             component = component.drop(i)
+#         else:
+#             continue
+#     return component
+def ignore_margins(component, width_p, header_p, footer_p, image_file):
     height, width = page_size(image_file)
-    vertical_margin = height*(height_p/100)
+    top_margin = height*(header_p/100)
+    bottom_margin = height - (height*(footer_p/100))
+    # left_margin = width*(left_m/100)
+    # right_margin = width*(right_m/100)
+    # vertical_margin = height*(height_p/100)
     horizontal_margin = width*(width_p/100)
+    # for i in range(len(component)):
+    #     if((component['Top'][i][1] > height - vertical_margin) and len(component['Component'][i][0])<7):
+    #         component = component.drop(i)
+    #     elif((component['Bottom'][i][1] < vertical_margin) and len(component['Component'][i][0])<7):
+    #         component = component.drop(i)
+    #     elif(component['Right'][i][0] < horizontal_margin):
+    #         component = component.drop(i)
+    #     elif(component['Left'][i][0] > width - horizontal_margin):
+    #         component = component.drop(i)
+    #     else:
+    #         continue
     for i in range(len(component)):
-        if((component['Top'][i][1] > height - vertical_margin) and len(component['Component'][i][0])<7):
+        if((component['Top'][i][1] > height - top_margin) and len(component['Component'][i][0])<7):
             component = component.drop(i)
-        elif((component['Bottom'][i][1] < vertical_margin) and len(component['Component'][i][0])<7):
+        elif((component['Bottom'][i][1] < bottom_margin) and len(component['Component'][i][0])<7):
             component = component.drop(i)
         elif(component['Right'][i][0] < horizontal_margin):
             component = component.drop(i)
