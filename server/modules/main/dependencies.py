@@ -13,7 +13,7 @@ def save_uploaded_images(images: List[UploadFile]) -> str:
 	os.system(f'rm -rf {IMAGE_FOLDER}/*')
 	print(f'Saving {len(images)} to location: {IMAGE_FOLDER}')
 	for image in images:
-		location = join(IMAGE_FOLDER, f'{image.filename}')
+		location = join(IMAGE_FOLDER, f'{image.filename.strip(" .")}')
 		with open(location, 'wb') as f:
 			shutil.copyfileobj(image.file, f)
 	return IMAGE_FOLDER
