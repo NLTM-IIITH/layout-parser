@@ -449,14 +449,18 @@ def visualise_paragraph_order(image, target_components, euclidean,component):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     count = 0
     image_with_boxes = image_rgb.copy()
-    for i in target_components:
+    # print(type(component))
+    for idx1,rowcomp in component.iterrows():
         left1 = []
         right1 = []
         top1 = []
         bottom1 = []
         for index, row in euclidean.iterrows():
             box_id = int(row['Id'])
-            if box_id in i[0]:
+            # print(type(box_id))
+            # print(type(rowcomp['Component'][0][0]))
+            if box_id in rowcomp['Component'][0]:
+                order = rowcomp['Order']
                 right_box1 = row['Right']
                 left_box1 = row['Left']
                 top_box1 = row['Top']
@@ -465,6 +469,7 @@ def visualise_paragraph_order(image, target_components, euclidean,component):
                 left_box = left_box1[0]
                 top_box = top_box1[1]
                 bottom_box = bottom_box1[1]
+                print(right_box,left_box,top_box,bottom_box)
                 # right_box = parse_string(right_box1,"[",",")
                 # left_box = parse_string(left_box1,"[",",")
                 # top_box = parse_string(top_box1,",","]")
@@ -477,23 +482,80 @@ def visualise_paragraph_order(image, target_components, euclidean,component):
                     top1.append(int(round(float(top_box))))
                 if(int(round(float(bottom_box)))!=-1):
                     bottom1.append(int(round(float(bottom_box))))
-            l = min(left1)
-            r = max(right1)
-            t = min(top1)
-            b = max(bottom1)
-            center_top = [int(l+r)/2, int(t)]
-            center_bottom = [int(l+r)/2, int(b)]
-            center_right = [int(r), int(t+b)/2]
-            center_left = [int(l), int(t+b)/2]
-            larger_box_top_left = (int(l - 20), int(t - 20))
-            larger_box_bottom_right = (int(r + 10), int(b + 10))
+            # print(left1,right1,top1,bottom1)  
+        l = min(left1)
+        r = max(right1)
+        t = min(top1)
+        b = max(bottom1)
+        center_top = [int(l+r)/2, int(t)]
+        center_bottom = [int(l+r)/2, int(b)]
+        center_right = [int(r), int(t+b)/2]
+        center_left = [int(l), int(t+b)/2]
+        larger_box_top_left = (int(l - 20), int(t - 20))
+        larger_box_bottom_right = (int(r + 10), int(b + 10))
 
-            cv2.rectangle(image_with_boxes, larger_box_top_left, larger_box_bottom_right, (0, 0, 255), 2)
-            cv2.putText(image_with_boxes, str(component['Order'][count]), (int(l - 20), int(t - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-            count = count + 1
+        cv2.rectangle(image_with_boxes, larger_box_top_left, larger_box_bottom_right, (0, 0, 255), 2)
+        # cv2.putText(image_with_boxes, str(component['Order'][count]), (int(l - 20), int(t - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+        cv2.putText(image_with_boxes, str(order), (int(l - 20), int(t - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+        count = count + 1
 
-    output_path = 'paragraph_order.png'
-    cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
+    # output_path = 'paragraph_order.png'
+    # cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
+    return image_with_boxes
+
+
+
+
+# def visualise_paragraph_order(image, target_components, euclidean,component):
+
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     count = 0
+#     image_with_boxes = image_rgb.copy()
+#     for i in target_components:
+#         left1 = []
+#         right1 = []
+#         top1 = []
+#         bottom1 = []
+#         for index, row in euclidean.iterrows():
+#             box_id = int(row['Id'])
+#             if box_id in i[0]:
+#                 right_box1 = row['Right']
+#                 left_box1 = row['Left']
+#                 top_box1 = row['Top']
+#                 bottom_box1 = row['Bottom']
+#                 right_box = right_box1[0]
+#                 left_box = left_box1[0]
+#                 top_box = top_box1[1]
+#                 bottom_box = bottom_box1[1]
+#                 # right_box = parse_string(right_box1,"[",",")
+#                 # left_box = parse_string(left_box1,"[",",")
+#                 # top_box = parse_string(top_box1,",","]")
+#                 # bottom_box = parse_string(bottom_box1,",","]")
+#                 if(int(round(float(left_box)))!=-1):
+#                     left1.append(int(round(float(left_box))))
+#                 if(int(round(float(right_box)))!=-1):
+#                     right1.append(int(round(float(right_box))))
+#                 if(int(round(float(top_box)))!=-1):
+#                     top1.append(int(round(float(top_box))))
+#                 if(int(round(float(bottom_box)))!=-1):
+#                     bottom1.append(int(round(float(bottom_box))))
+#             l = min(left1)
+#             r = max(right1)
+#             t = min(top1)
+#             b = max(bottom1)
+#             center_top = [int(l+r)/2, int(t)]
+#             center_bottom = [int(l+r)/2, int(b)]
+#             center_right = [int(r), int(t+b)/2]
+#             center_left = [int(l), int(t+b)/2]
+#             larger_box_top_left = (int(l - 20), int(t - 20))
+#             larger_box_bottom_right = (int(r + 10), int(b + 10))
+
+#             cv2.rectangle(image_with_boxes, larger_box_top_left, larger_box_bottom_right, (0, 0, 255), 2)
+#             cv2.putText(image_with_boxes, str(component['Order'][count]), (int(l - 20), int(t - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+#             count = count + 1
+
+#     output_path = 'paragraph_order.png'
+#     cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
 
 def get_next_word(euclidean, i):
     if(int(float(euclidean['Right_Box'][i][0])) == -1):
@@ -826,10 +888,43 @@ def page_size(image_file):
 #         else:
 #             continue
 #     return component
-def ignore_margins(component, width_p, header_p, footer_p, image_file):
+
+# def ignore_margins(component, width_p, header_p, footer_p, image_file):
+#     height, width = page_size(image_file)
+#     top_margin = height*(header_p/100)
+#     bottom_margin = height - (height*(footer_p/100))
+#     # left_margin = width*(left_m/100)
+#     # right_margin = width*(right_m/100)
+#     # vertical_margin = height*(height_p/100)
+#     horizontal_margin = width*(width_p/100)
+#     # for i in range(len(component)):
+#     #     if((component['Top'][i][1] > height - vertical_margin) and len(component['Component'][i][0])<7):
+#     #         component = component.drop(i)
+#     #     elif((component['Bottom'][i][1] < vertical_margin) and len(component['Component'][i][0])<7):
+#     #         component = component.drop(i)
+#     #     elif(component['Right'][i][0] < horizontal_margin):
+#     #         component = component.drop(i)
+#     #     elif(component['Left'][i][0] > width - horizontal_margin):
+#     #         component = component.drop(i)
+#     #     else:
+#     #         continue
+#     for i in range(len(component)):
+#         if((component['Top'][i][1] > height - top_margin) and len(component['Component'][i][0])<7):
+#             component = component.drop(i)
+#         elif((component['Bottom'][i][1] < bottom_margin) and len(component['Component'][i][0])<7):
+#             component = component.drop(i)
+#         elif(component['Right'][i][0] < horizontal_margin):
+#             component = component.drop(i)
+#         elif(component['Left'][i][0] > width - horizontal_margin):
+#             component = component.drop(i)
+#         else:
+#             continue
+#     return component
+
+def ignore_margins(component, width_p, header, footer, image_file):
     height, width = page_size(image_file)
-    top_margin = height*(header_p/100)
-    bottom_margin = height - (height*(footer_p/100))
+    top_margin = height*(header/100)
+    bottom_margin = height*(footer/100)
     # left_margin = width*(left_m/100)
     # right_margin = width*(right_m/100)
     # vertical_margin = height*(height_p/100)
@@ -846,9 +941,11 @@ def ignore_margins(component, width_p, header_p, footer_p, image_file):
     #     else:
     #         continue
     for i in range(len(component)):
-        if((component['Top'][i][1] > height - top_margin) and len(component['Component'][i][0])<7):
+        if((component['Top'][i][1] < top_margin) and len(component['Component'][i][0])<10):
             component = component.drop(i)
-        elif((component['Bottom'][i][1] < bottom_margin) and len(component['Component'][i][0])<7):
+        # elif((component['Bottom'][i][1] > (height - bottom_margin)) and len(component['Component'][i][0])<10):
+        #     component = component.drop(i)
+        elif((component['Top'][i][1] > (height - bottom_margin)) and len(component['Component'][i][0])<10):
             component = component.drop(i)
         elif(component['Right'][i][0] < horizontal_margin):
             component = component.drop(i)
