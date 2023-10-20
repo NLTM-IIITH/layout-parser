@@ -340,7 +340,74 @@ def calculate_bottombox_para(new_df,x):
 
 
 #updated for w/o manual threshs
-def recognise_paragraphs(image, target_components, euclidean, image_filename):
+# def recognise_paragraphs(image, target_components, euclidean, image_filename):
+
+#     #  image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     component = pd.DataFrame()
+#     count = 0
+#     # Create a copy of the image to draw the boxes and labels on
+#     #  image_with_boxes = image_rgb.copy()
+#     for i in target_components:
+
+#         left1 = []
+#         right1 = []
+#         top1 = []
+#         bottom1 = []
+#         for index, row in euclidean.iterrows():
+#             box_id = int(row['Id'])
+#             if box_id in i[0]:
+#                 right_box1 = row['Right']
+#                 left_box1 = row['Left']
+#                 top_box1 = row['Top']
+#                 bottom_box1 = row['Bottom']
+#                 # right_box = parse_string(right_box1,"[",",")
+#                 # left_box = parse_string(left_box1,"[",",")
+#                 # top_box = parse_string(top_box1,",","]")
+#                 # bottom_box = parse_string(bottom_box1,",","]")
+#                 right_box = right_box1[0]
+#                 left_box = left_box1[0]
+#                 top_box = top_box1[1]
+#                 bottom_box = bottom_box1[1]
+#                 if(int(round(float(left_box)))!=-1):
+#                     left1.append(int(round(float(left_box))))
+#                 if(int(round(float(right_box)))!=-1):
+#                     right1.append(int(round(float(right_box))))
+#                 if(int(round(float(top_box)))!=-1):
+#                     top1.append(int(round(float(top_box))))
+#                 if(int(round(float(bottom_box)))!=-1):
+#                     bottom1.append(int(round(float(bottom_box))))
+#         l = min(left1)
+#         r = max(right1)
+#         t = min(top1)
+#         b = max(bottom1)
+#         center_top = [int(l+r)/2, int(t)]
+#         center_bottom = [int(l+r)/2, int(b)]
+#         center_right = [int(r), int(t+b)/2]
+#         center_left = [int(l), int(t+b)/2]
+#         larger_box_top_left = (int(l - 20), int(t - 20))
+#         larger_box_bottom_right = (int(r + 10), int(b + 10))
+#         bottom_box = [-1, 0]
+#         visited = 0
+#         order = -1
+#         # cv2.rectangle(image_with_boxes, larger_box_top_left, larger_box_bottom_right, (0, 0, 255), 2)
+#         new_row = pd.Series([i, count, center_top, center_bottom, center_right, center_left, bottom_box, visited, order])
+#         component = component.append(new_row, ignore_index=True)
+#         count = count+1
+#     #  plt.imshow(image_with_boxes)
+#     #  plt.axis('off')
+#     #  plt.show()
+#     #  output_path = 'Para.png'
+#     #  cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
+#     new_column_names = {0: 'Component', 1: 'Id', 2: 'Top',3: 'Bottom',4: 'Right',5: 'Left',6: 'Bottom_Box',7: 'Visited',8: 'Order'}
+#     component = component.rename(columns=new_column_names)
+#     component = ignore_margins(component, 20, 0, image_filename)
+#     component = component.reset_index(drop=True)
+#     vertical = find_closest_paragraphs(component)
+#     x = kde_estimate(vertical)
+#     calculate_bottombox_para(component,x)
+#     return component
+
+def recognise_paragraphs(image, target_components, euclidean, image_filename, width_p, header_p, footer_p):
 
     #  image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     component = pd.DataFrame()
@@ -360,14 +427,16 @@ def recognise_paragraphs(image, target_components, euclidean, image_filename):
                 left_box1 = row['Left']
                 top_box1 = row['Top']
                 bottom_box1 = row['Bottom']
-                # right_box = parse_string(right_box1,"[",",")
-                # left_box = parse_string(left_box1,"[",",")
-                # top_box = parse_string(top_box1,",","]")
-                # bottom_box = parse_string(bottom_box1,",","]")
                 right_box = right_box1[0]
                 left_box = left_box1[0]
                 top_box = top_box1[1]
                 bottom_box = bottom_box1[1]
+                # print(left_box1, right_box1, top_box1, bottom_box1)
+                # print(type(left_box1), type(right_box1), type(top_box1), type(bottom_box1))
+                # right_box = parse_string(right_box1,"[",",")
+                # left_box = parse_string(left_box1,"[",",")
+                # top_box = parse_string(top_box1,",","]")
+                # bottom_box = parse_string(bottom_box1,",","]")
                 if(int(round(float(left_box)))!=-1):
                     left1.append(int(round(float(left_box))))
                 if(int(round(float(right_box)))!=-1):
@@ -391,7 +460,7 @@ def recognise_paragraphs(image, target_components, euclidean, image_filename):
         order = -1
         # cv2.rectangle(image_with_boxes, larger_box_top_left, larger_box_bottom_right, (0, 0, 255), 2)
         new_row = pd.Series([i, count, center_top, center_bottom, center_right, center_left, bottom_box, visited, order])
-        component = component.append(new_row, ignore_index=True)
+        component = component._append(new_row, ignore_index=True)
         count = count+1
     #  plt.imshow(image_with_boxes)
     #  plt.axis('off')
@@ -400,11 +469,11 @@ def recognise_paragraphs(image, target_components, euclidean, image_filename):
     #  cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
     new_column_names = {0: 'Component', 1: 'Id', 2: 'Top',3: 'Bottom',4: 'Right',5: 'Left',6: 'Bottom_Box',7: 'Visited',8: 'Order'}
     component = component.rename(columns=new_column_names)
-    component = ignore_margins(component, 20, 0, image_filename)
+    component = ignore_margins(component,width_p,header_p,footer_p,image_filename)
     component = component.reset_index(drop=True)
-    vertical = find_closest_paragraphs(component)
-    x = kde_estimate(vertical)
-    calculate_bottombox_para(component,x)
+    vertical = find_closest_paragraphs(component) #added
+    x_para = kde_estimate(vertical) #added
+    calculate_bottombox_para(component,x_para) #added
     return component
 
 def minimum_euclidean(component):
