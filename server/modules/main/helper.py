@@ -420,7 +420,7 @@ def doctr_predictions(directory):
 	
 	return abs_coords
 
-def Reading_Order_Generator(image_file, width_p, header_p, footer_p):
+def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only):
 
 	pred = doctr_predictions(image_file)
 	df = pd.DataFrame(pred)
@@ -455,33 +455,38 @@ def Reading_Order_Generator(image_file, width_p, header_p, footer_p):
 	min_idx =  minimum_euclidean(component)
 	# print(min_idx)
 	component = paragraph_order(component)
-	# visualise_paragraph_order(image, target_components, euclidean,component)
-	new = pd.DataFrame()
-	sort_order = component.sort_values('Order').index
-	new = component.loc[sort_order]
-	new = new.reset_index(drop=True)
-	new_euclidean = pd.DataFrame()
-	euclidean = word_order(new, euclidean)
-	sort_order = euclidean.sort_values('Order').index
-	new_euclidean = euclidean.loc[sort_order]
-	# print(new_euclidean)
-	new_euclidean = new_euclidean.reset_index(drop=True)
-	# print(new_euclidean)
-	image = cv2.imread(image_file)
-	image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file, header_p, footer_p)
-	# output_path = 'Output.png'
-	# cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
-	# euclidean.to_csv('Euclidean.csv')
-	# print(sort_order)
-	# print(reading_order_json)
-	return image_with_boxes, reading_order_json
-	# print(new_euclidean)
+
+	if para_only is True:
+		img = visualise_paragraph_order(image, target_components, euclidean,component)
+		return img
+	elif para_only is False:	
+		new = pd.DataFrame()
+		sort_order = component.sort_values('Order').index
+		new = component.loc[sort_order]
+		new = new.reset_index(drop=True)
+		new_euclidean = pd.DataFrame()
+		euclidean = word_order(new, euclidean)
+		sort_order = euclidean.sort_values('Order').index
+		new_euclidean = euclidean.loc[sort_order]
+		# print(new_euclidean)
+		new_euclidean = new_euclidean.reset_index(drop=True)
+		# print(new_euclidean)
+		image = cv2.imread(image_file)
+		image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file, header_p, footer_p)
+		# output_path = 'Output.png'
+		# cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
+		# euclidean.to_csv('Euclidean.csv')
+		# print(sort_order)
+		# print(reading_order_json)
+		return image_with_boxes, reading_order_json
+		# print(new_euclidean)
 
 def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_percentages: int, header_percentage: int, footer_percentage: int) -> List[LayoutImageResponse]:
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	ret = []
+	para_only = False #para_only = True when visualizing para boxes, here we get only the reading_order json, so para_only not required
 	for idx in range(len(files)):
-		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage)
+		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage, para_only)
 		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=os.path.basename(files[idx])))
 
 	logtime(t, 'Time taken to generate Reading Order')

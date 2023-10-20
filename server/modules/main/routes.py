@@ -31,7 +31,7 @@ async def doctr_layout_parser(
 	dilate: bool = Form(False),
 	left_right_percentages: int = Form(0),
 	header_percentage: int = Form(0),
-	footer_percentage: int = Form(0)
+	footer_percentage: int = Form(0)	
 ):
 	"""
 	API endpoint for calling the layout parser
@@ -119,7 +119,8 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 		ge=0,
 		le=100,
 		description='Footer margin in percent of the total page height from bottom'
-	)
+	),
+	para_only: bool = False
 ):
 	"""
 	This endpoint is only used to demonstration purposes.
@@ -130,6 +131,49 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	"""
 	image_path = save_uploaded_image(image)
 	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-	img, _ = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage)
+	if para_only is True:
+		img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only)
+		cv2.imwrite(save_location, img)
+		return FileResponse(save_location)
+	elif para_only is False:
+		img,_ = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only)
+		cv2.imwrite(save_location,img)
+		return FileResponse(save_location)
+
+
+@router.post('/visualize/paragraph_order')
+async def layout_parser_swagger_only_demo_Paragraph_Reading_Order(
+	image: UploadFile = File(...),
+	left_right_percentage: int = Form(
+		0,
+		ge=0,
+		le=100,
+		description='Left right margins in percent of the total page width'
+	),
+	header_percentage: int = Form(
+		0,
+		ge=0,
+		le=100,
+		description='Header margin in percent of the total page height from top'
+	),
+	footer_percentage: int = Form(
+		0,
+		ge=0,
+		le=100,
+		description='Footer margin in percent of the total page height from bottom'
+	)	
+):
+	"""
+	This endpoint is only used to demonstration purposes.
+	this endpoint returns/displays the input image with the
+	paragraph bounding boxes clearly marked in blue rectangles.
+
+	PS: This endpoint is not to be called from outside of swagger
+	"""
+	image_path = save_uploaded_image(image)
+	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
+	para_only = True
+	img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only)
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)
+	
