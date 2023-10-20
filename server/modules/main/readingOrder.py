@@ -424,25 +424,51 @@ def get_next(component, i):
   else:
     return int(component['Bottom_Box'][i][1])
 
+# def paragraph_order(component):
+#     order = 0
+#     min_idx = minimum_euclidean(component)
+
+#     while any(component['Visited'] == 0) and min_idx != -1:
+#         if component['Visited'][min_idx] != 1:
+#             # component['Visited'][min_idx] = 1
+#             # component['Order'][min_idx] = order
+#             component.loc[min_idx, 'Visited'] = 1
+#             component.loc[min_idx, 'Order'] = order
+#             order += 1
+
+#         next_idx = get_next(component, min_idx)
+#         if next_idx != -1:
+#             min_idx = next_idx
+#         else:
+#             min_idx = minimum_euclidean(component)
+
+#     return component
+
 def paragraph_order(component):
+    comp = component
     order = 0
-    min_idx = minimum_euclidean(component)
-
-    while any(component['Visited'] == 0) and min_idx != -1:
-        if component['Visited'][min_idx] != 1:
-            # component['Visited'][min_idx] = 1
-            # component['Order'][min_idx] = order
-            component.loc[min_idx, 'Visited'] = 1
-            component.loc[min_idx, 'Order'] = order
-            order += 1
-
-        next_idx = get_next(component, min_idx)
-        if next_idx != -1:
-            min_idx = next_idx
+    min_idx = minimum_euclidean(comp)
+    print('before loop')
+    
+    for i in range(len(comp)):
+        if any(comp['Visited'] == 0) and min_idx != -1:
+            print("ii")
+            if comp['Visited'][min_idx] != 1:
+                comp.loc[min_idx, 'Visited'] = 1
+                comp.loc[min_idx, 'Order'] = order
+                order += 1
+                print(order)
+            print("minn")
+            next_idx = get_next(comp, min_idx)
+            if next_idx != -1:
+                min_idx = next_idx
+            else:
+                min_idx = minimum_euclidean(comp)
+            print("loop end")
         else:
-            min_idx = minimum_euclidean(component)
-
-    return component
+            break
+            
+    return comp
 
 def visualise_paragraph_order(image, target_components, euclidean,component):
 
