@@ -598,7 +598,68 @@ def visualise_paragraph_order(image, target_components, euclidean,component):
     # cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
     return image_with_boxes
 
+def get_col(image,comp):
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image_with_boxes = image_rgb.copy()
 
+    df = comp
+    grouped = df.groupby("Order")
+    # Sort each group by "Id" for clarity
+    sorted_groups = [group.sort_values(by="Id") for _, group in grouped]
+    # Concatenate the sorted groups back into a single DataFrame
+    result_df = pd.concat(sorted_groups, ignore_index=True)
+
+    component = result_df
+    col_n=0
+    component['Col'] = 0
+    
+    for i in range(len(component)-1):
+        print(component['Bottom'][i][1],component['Top'][i+1][1])
+        dist = np.abs(component['Bottom'][i][1] - component['Top'][i+1][1])
+        print(dist)
+        # if dist < 500:
+        if component['Bottom'][i][1] < component['Top'][i+1][1] and(dist < 200):
+            component['Col'][i] = col_n
+            component['Col'][i+1] = col_n
+        else:
+            col_n+=1
+            component['Col'][i+1] = col_n    
+    # print(component)
+
+    result_df = component  
+    for i in range(len(set(np.array(result_df['Col'])))):
+        same_col=[]
+        t=[]
+        l=[]
+        b=[]
+        r=[]
+        for idx, rows in result_df.iterrows():    
+            if rows['Col'] == i:
+                same_col.append(rows['Component'][0])
+                if(int(round(float(rows['Left'][0])))!=-1):
+                    l.append(int(round(float(rows['Left'][0]))))
+                if(int(round(float(rows['Right'][0])))!=-1):
+                    r.append(int(round(float(rows['Right'][0]))))
+                if(int(round(float(rows['Top'][1])))!=-1):
+                    t.append(int(round(float(rows['Top'][1]))))
+                if(int(round(float(rows['Bottom'][1])))!=-1):
+                    b.append(int(round(float(rows['Bottom'][1]))))
+        tt = min(t)
+        bb = max(b)
+        ll = min(l)
+        rr = max(r)
+        center_top = [int(ll+rr)/2, int(tt)]
+        center_bottom = [int(ll+rr)/2, int(bb)]
+        center_right = [int(rr), int(tt+bb)/2]
+        center_left = [int(ll), int(tt+bb)/2]
+        larger_box_top_left = (int(ll - 20), int(tt - 20))
+        larger_box_bottom_right = (int(rr + 10), int(bb + 10))
+        cv2.rectangle(image_with_boxes, larger_box_top_left, larger_box_bottom_right, (0, 0, 255), 2)    
+        cv2.putText(image_with_boxes, str(i), (int(ll - 20), int(tt - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+    return image_with_boxes
+    # output_path = 'column_order.png'
+    # cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))  
+    
 
 
 # def visualise_paragraph_order(image, target_components, euclidean,component):
