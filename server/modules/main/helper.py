@@ -420,7 +420,7 @@ def doctr_predictions(directory):
 	
 	return abs_coords
 
-def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only):
+def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,col_only):
 
 	pred = doctr_predictions(image_file)
 	df = pd.DataFrame(pred)
@@ -456,10 +456,15 @@ def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only):
 	# print(min_idx)
 	component = paragraph_order(component)
 
-	if para_only is True:
+	if para_only is True and col_only is False:
 		img = visualise_paragraph_order(image, target_components, euclidean,component)
 		return img
-	elif para_only is False:	
+	elif para_only is False and col_only is True:
+		img = get_col(image,component)
+		return img
+	elif para_only is True and col_only is True:
+		pass
+	elif para_only is False and col_only is False:	
 		new = pd.DataFrame()
 		sort_order = component.sort_values('Order').index
 		new = component.loc[sort_order]
@@ -485,8 +490,9 @@ def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_pe
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	ret = []
 	para_only = False #para_only = True when visualizing para boxes, here we get only the reading_order json, so para_only not required
+	col_only = False
 	for idx in range(len(files)):
-		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage, para_only)
+		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage, para_only,col_only)
 		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=os.path.basename(files[idx])))
 
 	logtime(t, 'Time taken to generate Reading Order')
