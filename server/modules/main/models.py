@@ -10,6 +10,7 @@ class ModelChoice(str, Enum):
 	v2_doctr = 'v2_doctr'
 	worddetector = 'worddetector'
 	v2_docTR_readingOrder = 'v2_docTR_readingOrder'
+	v1_urdu = 'v1_urdu'
 
 
 class BoundingBox(BaseModel):

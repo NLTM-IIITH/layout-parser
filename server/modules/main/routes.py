@@ -7,13 +7,13 @@ from fastapi.responses import FileResponse
 
 from .dependencies import save_uploaded_images
 from .helper import (Reading_Order_Generator, process_image,
-                     process_image_craft, process_image_worddetector,
-                     process_multiple_image_craft,
+                     process_image_craft, process_image_urdu_v1,
+                     process_image_worddetector, process_multiple_image_craft,
                      process_multiple_image_doctr,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_worddetector,
                      process_multiple_pages_ReadingOrderGenerator,
-                     save_uploaded_image)
+                     process_multiple_urdu_v1, save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 from .readingOrder import *
@@ -47,6 +47,8 @@ async def doctr_layout_parser(
 		ret = process_multiple_image_doctr_v2(folder_path)
 	elif model == ModelChoice.v2_docTR_readingOrder:
 		ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
+	elif model == ModelChoice.v1_urdu:
+		ret = process_multiple_urdu_v1(folder_path)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
@@ -70,6 +72,8 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_craft(image_path)
 	elif model == ModelChoice.worddetector:
 		regions = process_image_worddetector(image_path)
+	elif model == ModelChoice.v1_urdu:
+		regions = process_image_urdu_v1(image_path)
 	else:
 		regions = process_image(image_path, model.value)
 	if dilate:

@@ -3,7 +3,7 @@ import shutil
 import time
 import uuid
 from collections import OrderedDict
-from os.path import join
+from os.path import basename, join
 from subprocess import check_output, run
 from tempfile import TemporaryDirectory
 from typing import List, Tuple
@@ -12,6 +12,7 @@ import torch
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from fastapi import UploadFile
+from skimage.filters import threshold_otsu, threshold_sauvola
 
 from ..core.config import IMAGE_FOLDER
 from .models import *
@@ -112,8 +113,7 @@ def process_multiple_image_craft(folder_path: str) -> List[LayoutImageResponse]:
 	t = time.time()
 	for file in files:
 		# TODO: add the proper error detection if the txt file is not found
-		# image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
-		img_name = os.path.basename(file).strip()[4:].replace('.txt', '')
+		img_name = basename(file).strip()[4:].replace('.txt', '')
 		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
 		print(image_name)
 		a = open(file, 'r').read().strip()
@@ -160,8 +160,7 @@ def process_multiple_image_worddetector(folder_path: str) -> List[LayoutImageRes
 	t = time.time()
 	for file in files:
 		# TODO: add the proper error detection if the txt file is not found
-		# image_name = os.path.basename(file).strip()[4:].replace('txt', 'jpg')
-		img_name = os.path.basename(file).strip()[4:].replace('.txt', '')
+		img_name = basename(file).strip()[4:].replace('.txt', '')
 		image_name = [i for i in img_files if os.path.splitext(i)[0] == img_name][0]
 		print(image_name)
 		a = open(file, 'r').read().strip()
@@ -232,7 +231,7 @@ def process_multiple_image_doctr(folder_path: str) -> List[LayoutImageResponse]:
 		ret.append(
 			LayoutImageResponse(
 				regions=regions.copy(),
-				image_name=os.path.basename(files[idx])
+				image_name=basename(files[idx])
 			)
 		)
 	logtime(t, 'Time taken to process the doctr output')
@@ -277,11 +276,142 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 		ret.append(
 			LayoutImageResponse(
 				regions=regions.copy(),
-				image_name=os.path.basename(files[idx])
+				image_name=basename(files[idx])
 			)
 		)
 	logtime(t, 'Time taken to process the doctr output')
 	return ret
+
+def binarize_image_otsu(image):
+	threshold = threshold_otsu(image)
+	image1 = image < threshold
+	return image1
+
+def binarize_image_sauvola(image):
+	threshold = threshold_sauvola(image)
+	image1 = image < threshold
+	return image1 
+
+def horizontal_projections(image):
+	return np.sum(image, axis=1)
+
+def find_peaks_valley(hpp):
+	line_index = []
+	i = 0
+	while(i<len(hpp)-1):
+		#print("i==>",i)
+		index1 = i
+		flag1 = 0
+		flag2 = 0
+		for j in range (i, len(hpp)-1, 1):
+			if (hpp[j] != 0):
+				index1 = j-1
+				line_index.append(index1)
+				flag1 = 1
+				break
+		for j in range (index1+1, len(hpp)-1, 1):
+			if (hpp[j] == 0 and flag1 ==1):
+				index2 = j
+				line_index.append(index2)
+				flag2 = 1
+				break
+		if (flag1 ==1 and flag2==1):
+			i = index2	
+		if (flag1 == 0 and flag2 ==0):
+			break
+	return line_index		
+
+def process_multiple_urdu_v1(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+	ret = []
+	for filename in os.listdir(folder_path):
+		image_path = folder_path + filename
+		image =cv2.imread(image_path)
+		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		_, image_w = image_gray.shape
+		image_thres = binarize_image_sauvola(image_gray)
+		hpp = horizontal_projections(image_thres)
+
+		#finding vally and peak of histigram
+		line_index = find_peaks_valley(hpp)
+
+		regions = []
+		line = 1
+		for i in range(0,len(line_index)-1,2):
+			y1 = int(line_index[i])
+			y2 = int(line_index[i+1])
+			x1 = 0
+			x2 = image_w
+			# color = (0,0,255)
+			# thickness = 2 
+			if (y2-y1>10):
+				regions.append(Region(
+					bounding_box=BoundingBox(
+						x=x1,
+						y=y1,
+						w=x2-x1,
+						h=y2-y1
+					),
+					line=line,
+				))
+				line += 1
+		ret.append(LayoutImageResponse(
+			image_name=basename(image_path),
+			regions=regions.copy()
+		))
+	return ret
+
+def process_image_urdu_v1(image_path: str) -> List[Region]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+	folder_path = os.path.dirname(image_path)
+	ret = []
+	for filename in os.listdir(folder_path):
+		image_path = join(folder_path, filename)
+		print(image_path)
+		image = cv2.imread(image_path)
+		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		_, image_w = image_gray.shape
+		image_thres = binarize_image_sauvola(image_gray)
+		hpp = horizontal_projections(image_thres)
+
+		#finding vally and peak of histigram
+		line_index = find_peaks_valley(hpp)
+
+		regions = []
+		line = 1
+		for i in range(0,len(line_index)-1,2):
+			y1 = int(line_index[i])
+			y2 = int(line_index[i+1])
+			x1 = 0
+			x2 = image_w
+			# color = (0,0,255)
+			# thickness = 2 
+			if (y2-y1>10):
+				regions.append(Region(
+					bounding_box=BoundingBox(
+						x=x1,
+						y=y1,
+						w=x2-x1,
+						h=y2-y1
+					),
+					line=line,
+				))
+				line += 1
+		ret.append(LayoutImageResponse(
+			image_name=basename(image_path),
+			regions=regions.copy()
+		))
+	return ret[0].regions
 
 
 def process_image(image_path: str, model: str='doctr') -> List[Region]:
@@ -493,7 +623,7 @@ def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_pe
 	col_only = False
 	for idx in range(len(files)):
 		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage, para_only,col_only)
-		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=os.path.basename(files[idx])))
+		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=basename(files[idx])))
 
 	logtime(t, 'Time taken to generate Reading Order')
 	return ret		
