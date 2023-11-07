@@ -8,6 +8,7 @@ from subprocess import check_output, run
 from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
+import pytesseract
 import torch
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
@@ -320,6 +321,46 @@ def find_peaks_valley(hpp):
 		if (flag1 == 0 and flag2 ==0):
 			break
 	return line_index		
+
+def process_multiple_tesseract(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+	ret = []
+	for filename in os.listdir(folder_path):
+		image_path = join(folder_path, filename)
+		image = cv2.imread(image_path)
+		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		results = pytesseract.image_to_data(rgb, output_type=pytesseract.Output.DICT)
+
+		regions = []
+		line = 1
+		for i in range(0, len(results['text'])):
+			if int(results['conf'][i]) <= 0:
+				# Skipping the region as confidence is too low
+				continue
+			x = results['left'][i]
+			y = results['top'][i]
+			w = results['width'][i]
+			h = results['height'][i]
+			regions.append(Region(
+				bounding_box=BoundingBox(
+					x=x,
+					y=y,
+					w=w,
+					h=h
+				),
+				line=results['line_num'][i] + 1,
+			))
+			line += 1
+		ret.append(LayoutImageResponse(
+			image_name=basename(image_path),
+			regions=regions.copy()
+		))
+	return ret
 
 def process_multiple_urdu_v1(folder_path: str) -> List[LayoutImageResponse]:
 	"""

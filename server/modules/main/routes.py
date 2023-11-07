@@ -13,7 +13,8 @@ from .helper import (Reading_Order_Generator, process_image,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_worddetector,
                      process_multiple_pages_ReadingOrderGenerator,
-                     process_multiple_urdu_v1, save_uploaded_image)
+                     process_multiple_tesseract, process_multiple_urdu_v1,
+                     save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 from .readingOrder import *
@@ -49,6 +50,8 @@ async def doctr_layout_parser(
 		ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
 	elif model == ModelChoice.v1_urdu:
 		ret = process_multiple_urdu_v1(folder_path)
+	elif model == ModelChoice.tesseract:
+		ret = process_multiple_tesseract(folder_path)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
@@ -74,6 +77,9 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_worddetector(image_path)
 	elif model == ModelChoice.v1_urdu:
 		regions = process_image_urdu_v1(image_path)
+	elif model == ModelChoice.tesseract:
+		folder_path = os.path.dirname(image_path)
+		regions = process_multiple_tesseract(folder_path)[0].regions
 	else:
 		regions = process_image(image_path, model.value)
 	if dilate:

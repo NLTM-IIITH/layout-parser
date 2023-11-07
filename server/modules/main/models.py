@@ -11,6 +11,7 @@ class ModelChoice(str, Enum):
 	worddetector = 'worddetector'
 	v2_docTR_readingOrder = 'v2_docTR_readingOrder'
 	v1_urdu = 'v1_urdu'
+	tesseract = 'tesseract'
 
 
 class BoundingBox(BaseModel):
