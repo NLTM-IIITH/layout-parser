@@ -3,6 +3,14 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+class ModelChoice(str, Enum):
+	doctr = 'doctr'
+	tesseract = 'tesseract'
+
+class ModalityChoice(str, Enum):
+	word = 'word'
+	line = 'line'
+	page = 'page'
 
 class LayoutConfig(BaseModel):
 	pass
@@ -130,3 +138,17 @@ class PreProcessorFontResponse(BaseModel):
 	images: List[ImageFonts]
 class PreProcessorPropertiesResponse(BaseModel):
 	images: List[ImageProperties]
+
+class FontRegion(BaseModel):
+	bounding_box: BoundingBox
+	fontSize: Optional[int] = Field(description='size of the font')
+	fontColor: Optional[List[int]] = Field(description='font color in RGB')
+	fontDecoration: Optional[str] = Field(description='font decoration bold/regular')
+
+class FontAttributeImage(BaseModel):
+	image: Optional[str] = Field(description='image name')
+	font_regions: List[FontRegion]
+
+class FontAttributesResponse(BaseModel):
+	images: List[FontAttributeImage]
+
