@@ -22,10 +22,10 @@ def script_inference_alexnet(folder_path: str) ->list[SIResponse]:
 		predictions (list[SIResponse]): Prediction in SIResponse format
 	"""
 	files = [join(folder_path, image) for image in os.listdir(folder_path)]
-	weights_url = ""
+	#Download model weights
+	weights_url = "https://github.com/kuna71/layout-parser-api/releases/download/weights/Synthetic_wordgenerator_AlexNet_100000_random-font-size_StateDicts.pt"
 	response = requests.get(weights_url)
 	if response.status_code == 200:
-    # Load the weights from the response content
 		weights_bytes = BytesIO(response.content)
 	else:
 		print("Unable to download weights")
