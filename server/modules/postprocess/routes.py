@@ -1,10 +1,10 @@
 from subprocess import call
 from tempfile import TemporaryDirectory
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 
-from .helper import process_images, process_layout_output
-from .models import MIResponse, PostprocessRequest, SIResponse
+from .helper import process_images, process_layout_output, script_inference_alexnet
+from .models import MIResponse, PostprocessRequest, SIResponse, ModelChoice
 
 router = APIRouter(
 	prefix='/layout/postprocess',
@@ -71,7 +71,7 @@ def identify_scenetext_language(si_request: PostprocessRequest) -> list[SIRespon
 	response_model=list[SIResponse],
 	response_model_exclude_none=True
 )
-def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_script(si_request: PostprocessRequest, model: ModelChoice) -> list[SIResponse]:
 	"""
 	This is an endpoint for identifying the script of the word images.
 	this model was contributed by **Punjab university (@Ankur)** on 07-10-2022
@@ -86,8 +86,13 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
 	tmp = TemporaryDirectory(prefix='st_script')
 	process_images(si_request.images, tmp.name)
-	call(f'./script_iden_v1.sh {tmp.name}', shell=True)
-	return process_layout_output(tmp.name)
+	if(model==ModelChoice.default):
+		call(f'./script_iden_v1.sh {tmp.name}', shell=True)
+		ret = process_layout_output(tmp.name)
+	elif(model==ModelChoice.alexnet):
+		ret = script_inference_alexnet(tmp.name)
+	return ret
+	
 
 
 @router.post(
