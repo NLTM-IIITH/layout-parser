@@ -15,3 +15,4 @@ tqdm
 uvicorn
 beautifulsoup4
 scikit-learn
+pytesseract
