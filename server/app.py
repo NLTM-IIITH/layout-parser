@@ -8,6 +8,7 @@ from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
 from .modules.postprocess.routes import router as postprocess_router
 from .modules.preprocess.routes import router as preprocess_router
+from .modules.layout_detection.routes import router as layout_detection_router
 
 app = FastAPI(
 	title='Layout Parser API',
@@ -34,3 +35,4 @@ app.include_router(preprocess_router)
 app.include_router(main_router)
 app.include_router(cegis_router)
 app.include_router(postprocess_router)
+app.include_router(layout_detection_router)
