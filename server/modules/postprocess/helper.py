@@ -1,65 +1,9 @@
 import base64
 import json
 import os
-import torch
-from torchvision import transforms
-from PIL import Image
 from os.path import join
-
 from fastapi import HTTPException
-
-from .models import ClassifyResponse, SIResponse
-from Models.script_identification import AlexNet
-import requests
-from io import BytesIO
-def script_inference_alexnet(folder_path: str) ->list[SIResponse]:
-	"""Performs inference using AlexNet model
-
-	Args:
-		folder_path (str): folder_path of images to perform inference on
-
-	Returns:
-		predictions (list[SIResponse]): Prediction in SIResponse format
-	"""
-	files = [join(folder_path, image) for image in os.listdir(folder_path)]
-	#Download model weights
-	weights_url = "https://github.com/kuna71/layout-parser-api/releases/download/weights/Synthetic_wordgenerator_AlexNet_100000_random-font-size_StateDicts.pt"
-	response = requests.get(weights_url)
-	if response.status_code == 200:
-		weights_bytes = BytesIO(response.content)
-	else:
-		print("Unable to download weights")
-	predictions = []
-	for file in files:
-		model = AlexNet(num_classes=11)
-    	#Load saved weights
-		model.load_state_dict(torch.load(weights_bytes))
-		#Define transformation
-		normalize = transforms.Normalize(
-			mean=[0.485, 0.456, 0.406],
-			std=[0.229, 0.224, 0.225],
-		)
-		preprocess = transforms.Compose([
-			transforms.Resize((227,227)),
-			transforms.ToTensor(),
-			normalize,
-			transforms.Grayscale()
-		])
-		scripts = ["devanagari", "bengali", "gujarati", "gurumukhi", "kannada", "malayalam", "odia", "tamil", "urdu", "latin", "odia"]
-  
-
-		#Load image and apply transformations
-		image = Image.open(file).convert("RGB")
-		input_tensor = preprocess(image)
-		input_tensor = input_tensor.unsqueeze(0)  
-		#Get output
-		with torch.no_grad():  
-			output = model(input_tensor)
-		probabilities = torch.softmax(output, dim=1)
-		predicted_class_index = torch.argmax(probabilities, dim=1)
-		predicted_class = scripts[predicted_class_index.item()]
-		predictions.append(SIResponse(text=predicted_class))
-	return predictions 
+from .models import ClassifyResponse
 
 def process_images(images: list[str], path: str='/home/layout/layout-parser/images'):
 	"""

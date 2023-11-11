@@ -3,8 +3,10 @@ from tempfile import TemporaryDirectory
 
 from fastapi import APIRouter, Form
 
-from .helper import process_images, process_layout_output, script_inference_alexnet
-from .models import MIResponse, PostprocessRequest, SIResponse, ModelChoice
+from .helper import process_images, process_layout_output
+from .models import MIResponse, PostprocessRequest, SIResponse
+from ..script_identification.models import ModelChoice
+from ..script_identification.helper import process_output
 
 router = APIRouter(
 	prefix='/layout/postprocess',
@@ -90,7 +92,8 @@ def identify_script(si_request: PostprocessRequest, model: ModelChoice) -> list[
 		call(f'./script_iden_v1.sh {tmp.name}', shell=True)
 		ret = process_layout_output(tmp.name)
 	elif(model==ModelChoice.alexnet):
-		ret = script_inference_alexnet(tmp.name)
+		call(f'./script_iden_iitb.sh {tmp.name}', shell=True)
+		ret = process_output(tmp.name)
 	return ret
 	
 

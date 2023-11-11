@@ -2,9 +2,6 @@ from pydantic import BaseModel, Field
 from enum import Enum
 # SI stands for Script Identification
 
-class ModelChoice(str, Enum):
-    alexnet = 'alexnet'
-    default = 'default'	#Temporarily calling it default due to lack of knowledge regarding nature of model
 class PostprocessRequest(BaseModel):
 	images: list[str] = Field(
 		...,
