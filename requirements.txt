@@ -17,3 +17,5 @@ pytesseract
 pdf2image
 layoutparser
 bs4
+torch
+torchvision

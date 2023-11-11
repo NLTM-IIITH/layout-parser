@@ -40,7 +40,9 @@ def process_multiple_image_fasterrcnn(folder_path: str) -> List[LayoutImageRespo
 	for idx in range(len(img_files)):
 		t = time.time()
 		full_table_response = get_tables_from_page(img_files[idx])
-		logtime(t, 'Time taken to perform fastcrnn inference')
+		print(full_table_response)
+		t = time.time()
+		logtime(t, 'Time taken to perform fasterrcnn inference')
 		regions = Region.from_full_table_response(full_table_response)
 		ret.append(
 			LayoutImageResponse(
@@ -48,7 +50,8 @@ def process_multiple_image_fasterrcnn(folder_path: str) -> List[LayoutImageRespo
 			    image_name=os.path.basename(img_files[idx])
 				)
 			)
-	logtime(t, 'Time taken to process the doctr output')
+	t = time.time()
+	logtime(t, 'Time taken to process the fasterrcnn output')
 	return ret
 
 def process_image_fasterrcnn(image_path: str, model: str='fasterrcnn') -> List[Region]:
@@ -70,6 +73,7 @@ def process_image_fasterrcnn(image_path: str, model: str='fasterrcnn') -> List[R
 				regions=regions.copy(),
 			    image_name=os.path.basename(image_path)
 				)
+	t = time.time()
 	logtime(t, 'Time taken to process the fastcrnn output')
 	return ret
 

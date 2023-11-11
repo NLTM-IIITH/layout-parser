@@ -6,6 +6,8 @@ import torchvision
 from torchvision.ops import nms
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 import pytesseract
+import requests
+
 from .ocr_config import *
 
 

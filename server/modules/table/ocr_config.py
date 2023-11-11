@@ -1,5 +1,5 @@
 # Table OCR Related Properties
-faster_rcnn_model_url = 'https://github.com/Biyani404198/layout-parser-api/releases/download/untagged-353751ad100733c7242e/table_detection_model.pth'
+faster_rcnn_model_url = 'https://github.com/Biyani404198/layout-parser-api/releases/download/v1.0/table_detection_model.pth'
 det_threshold = 0.5
 table_recognition_language = 'eng'
 row_determining_threshold = 0.6667

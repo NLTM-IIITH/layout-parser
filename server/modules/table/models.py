@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from pydantic import BaseModel, Field
 
@@ -34,56 +34,39 @@ class BoundingBox(BaseModel):
 
 class Region(BaseModel):
 	bounding_box: BoundingBox
-	label: Optional[str] = ''
-	line: Optional[int] = Field(
-		0,
-		description='Stores the sequential line number of the para text starting from 1'
-	)
-
-	def to_xyxy(self) -> tuple[int, int, int, int]:
-		return (
-			self.bounding_box.x,
-			self.bounding_box.y,
-			self.bounding_box.x + self.bounding_box.w,
-			self.bounding_box.y + self.bounding_box.h
-		)
-
-	@classmethod
-	def from_xyxy(cls, coords: tuple[int, int, int, int], label='', line=0):
-		return cls.from_bounding_box(
-			bbox=BoundingBox.from_xyxy(coords),
-			label=label,
-			line=line
-		)
-
-	@classmethod
-	def from_bounding_box(cls, bbox, label='', line=0):
-		"""
-		construct a Region class from the bounding box class
-		"""
-		return cls(
-			bounding_box=bbox,
-			label=label,
-			line=line,
-		)
-
+	nrows: Optional[int]
+	ncells: Optional[int]
+	cellrows: Optional[Dict[int, List[BoundingBox]]]
+	
 	@classmethod
 	def from_full_table_response(cls, full_table_response):
-		"""
-        Construct instances of the class from a list of dictionaries containing table responses.
-        """
+		instances = []  # Create a list to store instances
 		for response_dict in full_table_response:
 			bbox = response_dict.get('bbox', None)
 			nrows = response_dict.get('nrows', None)
 			ncells = response_dict.get('ncells', None)
-			cellrows = response_dict.get('cellrows', None)
-        # Create an instance of the class with the provided values.
-		return cls(
-            bounding_box=bbox,
-            nrows=nrows,
-            ncells=ncells,
-			cellrows=cellrows
-        )
+			cellrows_data = response_dict.get('cellrows', None)
+			
+			if bbox is not None:
+				# Extract the x, y, width, and height values from the NumPy array
+				coords = bbox
+				bbox = BoundingBox.from_xyxy(coords)
+			
+			cellrows = {}  # Create a dictionary to store cell rows
+			if cellrows_data is not None:
+				for row_number, bounding_boxes in cellrows_data.items():
+					bounding_boxes = [BoundingBox.from_xyxy(coords) for coords in bounding_boxes]
+					cellrows[int(row_number)] = bounding_boxes
+			
+			# Create an instance of the class with the provided values and append it to the list
+			instances.append(cls(
+				bounding_box=bbox,
+				nrows=nrows,
+				ncells=ncells,
+				cellrows=cellrows))
+				
+		return instances
+
 
 
 class LayoutResponse(BaseModel):
