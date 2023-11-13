@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .modules.textron_api.routes import router as textron_router
 from .modules.doctr_api.routes import router as doctr_router
+
 from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
 from .modules.postprocess.routes import router as postprocess_router
