@@ -32,38 +32,6 @@ python main.py
 ```
 * To access the swagger UI go to [http://127.0.0.1:8888](http://127.0.0.1:8888)
 
-### Changes made for table detection module
-#### helper.py
-- Created helper function 'process_multiple_image_fasterrcnn()' and 'process_image_fasterrcnn()' which uses function 'get_tables_from_page()', imported from table_cellwise_detection.py, for inference.
-
-#### models.py
-- updated class 'ModelChoice' with the model 'fasterrcnn'.
-- updated class 'Region' to support the response output of inference call for the 'fasterrcnn' model.
-
-#### ocr_config.py
-- created model as github release and added its url to 'faster_rcnn_model_url'.
-
-#### routes.py
-- created API endpoint '/table' which uses helper function 'process_multiple_image_fasterrcnn()'.
-- created API endpoint '/visualize/table' which uses helper function 'process_image_fasterrcnn()' and uses cv2 to display bounding box of table and cells as well.
-
-#### table_cellwise_detection.py
-- added model script for inference of fasterrcnn.
-- updated model weights loading method from 'faster_rcnn_model_url'.
-
-#### app.py
-- added app.include_router(table_router).
-
-#### requirements.txt
-- added following requirements:
- - pytesseract
- - pdf2image
- - layoutparser
- - bs4
- - torchg
- - torchvision
-
-
 ## Authors
 
 Krishna Tulsyan
