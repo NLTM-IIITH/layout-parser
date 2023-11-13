@@ -1,13 +1,14 @@
 import numpy as np
+import os
 import cv2
+import requests
 import torch
 import torchvision
 from torchvision.ops import nms
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
-from server.modules.layout_detection.config import OCRConfig
+from .config import *
 
-ocr_config = OCRConfig()
 
 def create_model(num_classes):
     # load Faster RCNN pre-trained model
@@ -30,15 +31,36 @@ def perform_nms(boxes, scores, nms_threshold):
 def get_tables_cells_detection(img_file):
     # set the computation device
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    # load the model and the trained weights
     model = create_model(num_classes=3).to(device)
-    model.load_state_dict(torch.load(ocr_config.faster_rcnn_model_path, map_location=device))
+    model_file_path = 'table_detection_model.pth'
+
+    # Check if the model file already exists
+    if os.path.exists(model_file_path):
+        # Load the model from the local file
+        model.load_state_dict(torch.load(model_file_path, map_location=device))
+        print("Model loaded from the local file.")
+    else:
+        # Download the model if it doesn't exist locally
+        response = requests.get(faster_rcnn_model_url)
+    
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Save the downloaded content to a file (e.g., model.pth)
+            with open(model_file_path, 'wb') as model_file:
+                model_file.write(response.content)
+
+            # Load the model.pth file using torch.load
+            model.load_state_dict(torch.load(model_file_path, map_location=device))
+            print("Model downloaded and loaded.")
+        else:
+            print("Failed to download the model file")
+
     model.eval()
 
     # classes: 0 index is reserved for background
     CLASSES = ["bkg", "table", "cell"]
     # any classes having score below this will be discarded
-    detection_threshold = ocr_config.det_threshold
+    detection_threshold = det_threshold
 
     # get the image file name for saving output later on
     image_name = img_file
@@ -94,8 +116,8 @@ def get_tables_cells_detection(img_file):
 
         # Perform NMS to resolve overlap issue
         if len(unfiltered_tables):
-            tables = perform_nms(unfiltered_tables, table_scores, ocr_config.nms_table_threshold)
+            tables = perform_nms(unfiltered_tables, table_scores, nms_table_threshold)
         if len(unfiltered_cells):
-            cells = perform_nms(unfiltered_cells, cell_scores, ocr_config.nms_cell_threshold)
+            cells = perform_nms(unfiltered_cells, cell_scores, nms_cell_threshold)
 
     return tables, cells
