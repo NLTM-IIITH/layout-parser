@@ -63,6 +63,19 @@ python main.py
  - torchg
  - torchvision
 
+### Example
+- layout/table/
+  ![image](https://github.com/Biyani404198/layout-parser-api/assets/92304955/2c3f4a06-c77b-4856-8f25-ad75c2ece25f)
+  ![image](https://github.com/Biyani404198/layout-parser-api/assets/92304955/bc32c3bf-3a13-4c5c-a60f-7a015d942ab3)
+  ![image](https://github.com/Biyani404198/layout-parser-api/assets/92304955/297f08a8-36ba-446c-bd64-9901c91fe35c)
+
+- layout/visualize/table/
+  ![image](https://github.com/Biyani404198/layout-parser-api/assets/92304955/be8ecb12-437b-4cd6-9a22-c6d339afb282)
+  ![image](https://github.com/Biyani404198/layout-parser-api/assets/92304955/0dbed7ea-bfd8-4a54-a041-4d3a017dc613)
+
+
+
+
 
 ## Authors
 
