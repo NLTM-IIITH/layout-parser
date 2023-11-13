@@ -10,4 +10,4 @@ IMAGE_FOLDER = 'images'    # input dir in INPUT_DATA_DIR where images are saved
 PRED_IMAGES_FOLDER='server/modules/textron_results/predictions/devanagari'    # output predicted images from textron 
 PRED_TXT_FOLDER='server/modules/textron_results/txt/devanagari'   # output txt files containing the bboxes from textron
 PRED_CAGE_FOLDER='server/modules/textron_results/cage/devanagari'  # output cage files 
-TEXTRON_MAIN_FILE='server.modules.textron_api.main'       # a path to the main.py of the textron to be run - in this format because other this were giving relative import error
+TEXTRON_MAIN_FILE='server.modules.textron.main'       # a path to the main.py of the textron to be run - in this format because other this were giving relative import error

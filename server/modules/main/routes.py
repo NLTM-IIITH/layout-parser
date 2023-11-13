@@ -11,8 +11,10 @@ from .helper import (process_image, process_image_craft,
                      process_multiple_image_doctr,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_worddetector, save_uploaded_image)
-from .models import LayoutImageResponse, ModelChoice
+from .models import *
 from .post_helper import process_dilate, process_multiple_dilate
+from ..textron.helper import *
+from ..core.config import *
 
 router = APIRouter(
 	prefix='/layout',
@@ -30,6 +32,7 @@ async def doctr_layout_parser(
 	API endpoint for calling the layout parser
 	"""
 	print(model.value)
+	print('PRINT :',model)
 	if model == ModelChoice.craft:
 		ret = process_multiple_image_craft(folder_path)
 	elif model == ModelChoice.worddetector:
@@ -38,6 +41,8 @@ async def doctr_layout_parser(
 		ret = process_multiple_image_doctr(folder_path)
 	elif model == ModelChoice.v2_doctr:
 		ret = process_multiple_image_doctr_v2(folder_path)
+	elif model == ModelChoice.textron:
+		ret = process_images_textron(folder_path)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
@@ -61,6 +66,15 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_craft(image_path)
 	elif model == ModelChoice.worddetector:
 		regions = process_image_worddetector(image_path)
+	elif model == ModelChoice.textron:
+		print('RUNNING TEXTRON')
+		img_name=image_path.split('/')[-1].split('.')[0]
+		a=textron_visulaize(image_path)
+		save_location = PRED_IMAGES_FOLDER+'/{}_pred.jpg'.format(
+			img_name
+		)
+		print('file_name SAVED :',save_location)
+		return FileResponse(save_location)
 	else:
 		regions = process_image(image_path, model.value)
 	if dilate:
