@@ -32,7 +32,6 @@ app.add_middleware(
 )
 
 app.include_router(preprocess_router)
-app.include_router(iitb_font_router)
 app.include_router(main_router)
 app.include_router(cegis_router)
 app.include_router(postprocess_router)

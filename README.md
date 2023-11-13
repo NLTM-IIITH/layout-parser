@@ -1,53 +1,47 @@
-# Layout Parser - Font Attributes 
+# Layout Parser
 
 ## Description
 
-An endpoint to return the font attributes (font size, font color, font decoration) has been integrated to the code.
+This is an API that facilitates the use Layout Parser models to detect and extract
+the Bounding Box information from JPG images.
 
+## Getting Started
 
-## API Endpoint and usage
+### Dependencies
 
-Created a module server/modules/iitb_font to have the endpoint for font attributes
+* Ubuntu
+* Python 3.6+
 
-font endpoint - /layout/iitb-font/font
+### Starting FastAPI Server
 
-inputs: list of images
+* Clone the repo to local system
+```
+git clone https://github.com/NLTM-IIITH/layout-parser.git
+```
+* Create a python 3.6+ virtualenv
+```
+python -m venv layout-parser-venv
+```
+* Install the required python packages
+```
+pip install -r requirements.txt
+```
+* Simply run the main.py file
+```
+python main.py
+```
+* To access the swagger UI go to [http://127.0.0.1:8888](http://127.0.0.1:8888)
 
-model: doctr/tesseract
+## Authors
 
-k_size: kernel size for detecting bold text (automatic for tesseract) (bigger font requires higher value)
+Krishna Tulsyan
+[LinkedIn](https://www.linkedin.com/in/krishna-tulsyan/)
 
-bold_threshold: sensitivity for bold detection. (lower value means more sensitive)
+<!-- ## License
 
-Note: Default parameters work for most cases.
+This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details -->
 
-### Example
+## Acknowledgments
 
-![request](image.png)
-![response](image-1.png)
-
-## Modifications
-
-### Code
-
-Main additions in server/modules/iitb_font
-
-Added the created router in app.py line 35
-
-### Requirements
-
-Only added the following libraries
-
-- beautifulsoup4
-- scikit-learn
-- pytesseract
-
-## Suggestions
-
-The deleting of the images existing in image directory is OS dependent in the original code. 
-
-server/modules/iitb_font/helper.py has a simple function that can be used to delete files in the directory
-
-## Queries
-
-As far as I can observe, the exisiting server/modules/preprocess seems to be a placeholder that needs implementation. None of the endpoints in the module work.
+* [docTR](https://github.com/mindee/doctr)
+* [README.md Template](https://gist.github.com/DomPizzie/7a5ff55ffa9081f2de27c315f5018afc)

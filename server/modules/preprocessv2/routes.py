@@ -1,15 +1,13 @@
-from fastapi import APIRouter, UploadFile, Form
+from fastapi import UploadFile, Form
 
 from .models import *
 
 from .helper import save_uploaded_images, process_image_font_attributes_doctr, process_image_font_attributes_tesseract
 
-router = APIRouter(
-	prefix='/layout/iitb-font',
-	tags=['IITB Font'],
-)
+from ..preprocess.routes import router
 
-@router.post('/font',response_model=FontAttributesResponse)
+
+@router.post('/font_v2',response_model=FontAttributesResponse)
 async def get_font_properties_from_image(
 	images: List[UploadFile],
 	model: ModelChoice = Form(ModelChoice.doctr),
