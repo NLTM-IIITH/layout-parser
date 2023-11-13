@@ -4,9 +4,11 @@ from dateutil.tz import gettz
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+import os
+from .modules.core.config import *
+
 from .modules.textron_api.routes import router as textron_router
 from .modules.doctr_api.routes import router as doctr_router
-
 from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
 from .modules.postprocess.routes import router as postprocess_router
@@ -32,6 +34,9 @@ app.add_middleware(
 	allow_headers=['*'],
 	allow_credentials=True,
 )
+
+if not os.path.exists(IMAGE_FOLDER):
+	os.makedirs(IMAGE_FOLDER)
 
 app.include_router(textron_router)
 app.include_router(doctr_router)
