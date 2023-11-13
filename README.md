@@ -1,4 +1,4 @@
-# Textron : Layout API
+# Textron : Layout API : Text Detect 
 
 ## Routes added app.py:
 `textron_router` - from modules/textron_api which consists of the inference code to get the bboxes from the textron .
