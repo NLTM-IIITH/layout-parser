@@ -1,20 +1,46 @@
 # Layout Parser API
+## Description
 
-## Overview
+This is an API that facilitates the use Layout Parser models to detect and extract
+the Bounding Box information from JPG images.
 
-Implementation of the Layout Parser API, specifically intergration of the Layout Detection code for various classes (Tables, Equations, Figures and Text) from Bhasini OCR API Repository.
+## Getting Started
 
-## Changes Made
-### layout_detection module
-- Introduced layout_detection module, consolidating layout detection code for Tables, Equations, Figures, and Text, aiming to enhance code organization and maintainability in the Layout Parser API.
-### routes.py
-- Introduced `/detect-layouts` as the primary endpoint for performing layout detection across different classes in the API.
-- User inputs an images and a json response containing the bounding boxes for various classes is returned.
-### helpers.py
-- `helpers.py` provides a simple way to perform layout detection on single images.
-- The `get_layout_from_single_image` function utilizes functions from various classes (tables.py, equations.py, figures.py) to extract bounding boxes for tables, cells, equations, and figures.
-- The results are organized into a dictionary, including details about the user input image as well.
-### classes directory
-- Set up a handy classes folder with essential files like tables.py,equations.py,figures.py
-- These act as simple helpers to kickstart the layout detection process for various elements in the Layout Parser API.
+### Dependencies
+
+* Ubuntu
+* Python 3.6+
+
+### Starting FastAPI Server
+
+* Clone the repo to local system
+```
+git clone https://github.com/NLTM-IIITH/layout-parser.git
+```
+* Create a python 3.6+ virtualenv
+```
+python -m venv layout-parser-venv
+```
+* Install the required python packages
+```
+pip install -r requirements.txt
+```
+* Simply run the main.py file
+```
+python main.py
+```
+* To access the swagger UI go to [http://127.0.0.1:8888](http://127.0.0.1:8888)
+
+## Authors
+
+Krishna Tulsyan
+[LinkedIn](https://www.linkedin.com/in/krishna-tulsyan/)
+
+<!-- ## License
+This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details -->
+
+## Acknowledgments
+
+* [docTR](https://github.com/mindee/doctr)
+* [README.md Template](https://gist.github.com/DomPizzie/7a5ff55ffa9081f2de27c315f5018afc)
 
