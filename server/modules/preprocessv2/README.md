@@ -9,7 +9,9 @@ An endpoint to return the font attributes (font size, font color, font decoratio
 
 Created a module server/modules/iitb_font to have the endpoint for font attributes
 
-font endpoint - /layout/iitb-font/font
+font endpoint - /layout/preprocess/font_v2
+
+visualize endpoint - /layout/preprocess/visualize_font
 
 inputs: list of images
 
@@ -25,6 +27,7 @@ Note: Default parameters work for most cases.
 
 ![Request](examples/request_image.png)
 ![Response](examples/response_image.png)
+![Visualise](examples/visualise_image.png)
 
 ## Modifications
 

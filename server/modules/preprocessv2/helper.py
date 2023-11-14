@@ -46,6 +46,15 @@ def save_uploaded_images(images: List[UploadFile]) -> str:
 			shutil.copyfileobj(image.file, f)
 	return IMAGE_FOLDER
 
+def save_uploaded_image(image: UploadFile) -> str:
+	print('removing all the previous uploaded files from the image folder')
+	delete_files_in_directory(IMAGE_FOLDER)
+	print(f'Saving to location: {IMAGE_FOLDER}')
+	location = join(IMAGE_FOLDER, f'{image.filename}')
+	with open(location, 'wb') as f:
+		shutil.copyfileobj(image.file, f)
+	return location, IMAGE_FOLDER
+
 def convert_geometry_to_bbox(
 	geometry: Tuple[Tuple[float, float], Tuple[float, float]],
 	dim: Tuple[int, int],
