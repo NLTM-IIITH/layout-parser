@@ -1,3 +1,6 @@
+#custom
+layout-parser-venv/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -144,3 +147,4 @@ staticfiles
 
 # custom files and folders to exclude
 images
+layout-parser-venv/lib64
