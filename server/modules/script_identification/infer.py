@@ -20,6 +20,7 @@ def main(folder_path: str) ->list[SIResponse]:
     Returns:
         predictions (list[SIResponse]): Prediction in SIResponse format
     """
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     files = [join(folder_path, image) for image in os.listdir(folder_path)]
     model = AlexNet(num_classes=11)
     #Load saved weights
@@ -27,7 +28,7 @@ def main(folder_path: str) ->list[SIResponse]:
     if os.path.exists(local_weights_path):
     # Load the model from the local file if it exists
         print("Loading model from storage.")
-        model.load_state_dict(torch.load(local_weights_path))
+        model.load_state_dict(torch.load(local_weights_path, map_location=device))
     else:
     #If not found locally, download model weights
         print("Downloading model weights")
@@ -35,7 +36,7 @@ def main(folder_path: str) ->list[SIResponse]:
         response = requests.get(weights_url)
         if response.status_code == 200:
             weights_bytes = BytesIO(response.content)
-            model.load_state_dict(torch.load(weights_bytes))
+            model.load_state_dict(torch.load(weights_bytes, map_location=device))
             #Save weights locally
             torch.save(model.state_dict(), local_weights_path)
         else:
@@ -58,7 +59,8 @@ def main(folder_path: str) ->list[SIResponse]:
         #Load image and apply transformations
         image = Image.open(file).convert("RGB")
         input_tensor = preprocess(image)
-        input_tensor = input_tensor.unsqueeze(0)  	
+        input_tensor = input_tensor.unsqueeze(0)  
+        input_tensor.to(device)	
         #Get output
         with torch.no_grad():  
             output = model(input_tensor)
