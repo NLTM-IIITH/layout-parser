@@ -24,7 +24,7 @@ python -m venv layout-parser-venv
 ```
 * Install the required python packages
 ```
-pip install -r requirements.txt
+pip install -r requirements_script_identification.txt
 ```
 * Simply run the main.py file
 ```
@@ -41,6 +41,16 @@ python main.py
   * helper.py has function process_output which reads output.json and returns output in response format
   * models.py defines the response format and model-choice class using pydantic BaseModel
 * Dependencies are saved in requirements_script_identification.txt which adds onto requirements.txt with additional dependencies required
+* The model architecture is defined in server>modules>script_identification>iitb_script_identification_model.py
+
+### To perform inference using API:
+* CURL: curl -X 'POST' \
+  'http://0.0.0.0:8888/layout/postprocess/script?model=iitb-script-identification' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "images": ["base 64 format image string"]
+}'
 ## Authors
 
 Krishna Tulsyan
