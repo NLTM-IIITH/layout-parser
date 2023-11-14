@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ```
 python main.py
 ```
-* To access the swagger UI go to [http://127.0.0.1:8888](http://127.0.0.1:8888)
+* To access the swagger UI go to [http://127.0.0.1:8888/layout/docs](http://127.0.0.1:8888/layout/docs)
 
 ## Authors
 
