@@ -1,4 +1,3 @@
-from Models.script_identification import AlexNet
 from server.modules.script_identification.models import SIResponse
 import json
 from os.path import join

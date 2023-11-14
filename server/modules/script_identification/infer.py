@@ -1,6 +1,6 @@
 import sys
 sys.path.append(".")
-from Models.script_identification import AlexNet
+from server.modules.script_identification.iitb_script_identification_model import AlexNet
 import requests
 from io import BytesIO
 from os.path import join
