@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from enum import Enum
 # SI stands for Script Identification
 
 class PostprocessRequest(BaseModel):
