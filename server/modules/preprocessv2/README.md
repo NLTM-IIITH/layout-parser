@@ -23,8 +23,8 @@ Note: Default parameters work for most cases.
 
 ### Example
 
-![request](image.png)
-![response](image-1.png)
+![Request](examples/request_image.png)
+![Response](examples/response_image.png)
 
 ## Modifications
 

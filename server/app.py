@@ -8,7 +8,6 @@ from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
 from .modules.postprocess.routes import router as postprocess_router
 from .modules.preprocess.routes import router as preprocess_router
-from .modules.iitb_font.routes import router as iitb_font_router
 
 app = FastAPI(
 	title='Layout Parser API',
