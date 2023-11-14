@@ -10,4 +10,8 @@ else
 	echo -e "DATA_DIR\t$DATA_DIR"
 fi
 
+deactivate
+source ./server/modules/script_identification/layout-parser-venv-script-identification/bin/activate
 python ./server/modules/script_identification/infer.py $DATA_DIR
+deactivate	
+source ./layout-parser-venv/bin/activate
