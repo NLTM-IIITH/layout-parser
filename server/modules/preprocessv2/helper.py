@@ -18,7 +18,7 @@ import pytesseract
 from fastapi import UploadFile
 
 from ..core.config import IMAGE_FOLDER
-from ...models.text_attributes import TextAttributes
+from .text_attributes import TextAttributes
 from server.modules.main.helper import logtime
 
 from .models import FontAttributeImage, FontRegion, BoundingBox
