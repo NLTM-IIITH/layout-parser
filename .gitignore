@@ -152,3 +152,4 @@ images
 # textron dependencies
 pickle_U.pkl
 layout-parser-venv/lib64
+server/modules/textron/textron_results/*
