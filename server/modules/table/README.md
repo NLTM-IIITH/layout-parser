@@ -69,6 +69,9 @@ python main.py
 Krishna Tulsyan
 [LinkedIn](https://www.linkedin.com/in/krishna-tulsyan/)
 
+Ishan Biyani
+[LinkedIn](https://www.linkedin.com/in/ishan-biyani/)
+
 <!-- ## License
 
 This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details -->

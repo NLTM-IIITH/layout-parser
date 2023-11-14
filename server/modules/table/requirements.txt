@@ -13,3 +13,9 @@ scikit-image
 scipy
 tqdm
 uvicorn
+pytesseract
+pdf2image
+layoutparser
+bs4
+torch
+torchvision
