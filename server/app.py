@@ -5,8 +5,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import os
-from .modules.core.config import *
 
+from .modules.core.config import *
 from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
 from .modules.postprocess.routes import router as postprocess_router

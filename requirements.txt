@@ -12,4 +12,4 @@ requests
 scikit-image
 scipy
 tqdm
-uvicorn
+uvicorn 
