@@ -10,7 +10,7 @@ from .modules.core.config import *
 from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
 from .modules.postprocess.routes import router as postprocess_router
-from .modules.preprocess.routes import router as preprocess_router
+from .modules.preprocessv2.routes import router as preprocess_router
 
 app = FastAPI(
 	title='Layout Parser API',
