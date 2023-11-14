@@ -32,7 +32,6 @@ async def doctr_layout_parser(
 	API endpoint for calling the layout parser
 	"""
 	print(model.value)
-	print('PRINT :',model)
 	if model == ModelChoice.craft:
 		ret = process_multiple_image_craft(folder_path)
 	elif model == ModelChoice.worddetector:
@@ -67,13 +66,11 @@ async def layout_parser_swagger_only_demo(
 	elif model == ModelChoice.worddetector:
 		regions = process_image_worddetector(image_path)
 	elif model == ModelChoice.textron:
-		print('RUNNING TEXTRON')
 		img_name=image_path.split('/')[-1].split('.')[0]
 		a=textron_visulaize(image_path)
 		save_location = PRED_IMAGES_FOLDER+'/{}_pred.jpg'.format(
 			img_name
 		)
-		print('file_name SAVED :',save_location)
 		return FileResponse(save_location)
 	else:
 		regions = process_image(image_path, model.value)

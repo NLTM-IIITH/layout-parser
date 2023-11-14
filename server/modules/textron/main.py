@@ -281,9 +281,9 @@ def cage(file, X, only_pred):
     gold_label = get_label(Y)
 
 
-    path_json = 'text_classes.json'
-    T_path_pkl = 'pickle_T.pkl' #test data - have true labels
-    U_path_pkl = 'pickle_U.pkl' #unlabelled data - don't have true labels
+    path_json = os.path.join(TEXTRON_DEPENDENCIES,'text_classes.json')
+    T_path_pkl = os.path.join(TEXTRON_DEPENDENCIES,'pickle_T.pkl') #test data - have true labels
+    U_path_pkl = os.path.join(TEXTRON_DEPENDENCIES,'pickle_U.pkl') #unlabelled data - don't have true labels
 
     log_path_cage_1 = 'sms_log_1.txt' #cage is an algorithm, can be found below
 

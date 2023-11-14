@@ -13,7 +13,7 @@ from .modules.postprocess.routes import router as postprocess_router
 from .modules.preprocess.routes import router as preprocess_router
 
 app = FastAPI(
-	title='Layout API',
+	title='Layout Parser API',
 	description='',
 	docs_url='/layout/docs',
 	openapi_url='/layout/openapi.json'
@@ -37,7 +37,7 @@ if not os.path.exists(IMAGE_FOLDER):
 	os.makedirs(IMAGE_FOLDER)
 
 
-app.include_router(main_router)
 app.include_router(preprocess_router)
+app.include_router(main_router)
 app.include_router(cegis_router)
 app.include_router(postprocess_router)

@@ -4,7 +4,6 @@ matplotlib
 numpy
 opencv-python
 Pillow
-torch
 pydantic
 python-dateutil
 python-doctr
@@ -14,12 +13,3 @@ scikit-image
 scipy
 tqdm
 uvicorn
-jupyter
-pandas
-python-doctr[torch]
-rapidfuzz
-pytesseract
-scikit-learn
-tensorflow
-snorkel
-TextBlob
