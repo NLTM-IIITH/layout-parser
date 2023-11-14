@@ -18,10 +18,4 @@
 
 ## folders added 
 1. /images/ - all the input files will come in the folder.
-2. /server/modules/textron_results - all the output from the textron will come in this folder.
-
-## doctr_api : 
-1. dependencies.py -from modules/main
-2. helper.py - process_images_textron function for inference (same as in modules/main)
-3. model.py -from modules/main
-4. routes.py - uses '/' calls doctr_layout_parser '/visualization' is the visualization code (modules/main reference)
+2. /server/modules/textron/textron_results - all the output from the textron will come in this folder.
