@@ -30,11 +30,9 @@ Note: Default parameters work for most cases.
 
 ### Code
 
-Main additions in server/modules/iitb_font
+Main additions in server/modules/preprocessv2
 
-The code that does the font attribute detection is present in server/models/text_attributes.py
-
-Added the created router in app.py line 35
+In app.py line 10 imported router from preprocessv2, which was imported from preprocess folder.
 
 ### Requirements
 
@@ -48,7 +46,7 @@ Only added the following libraries
 
 The deleting of the images existing in image directory is OS dependent in the original code. 
 
-server/modules/iitb_font/helper.py has a simple function that can be used to delete files in the directory
+server/modules/preprocessv2/helper.py has a simple function that can be used to delete files in the directory
 
 ## Queries
 
