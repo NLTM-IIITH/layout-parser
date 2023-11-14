@@ -1,5 +1,5 @@
 # Textron : Layout API : Text Detect 
-![Alt text](relative%20exampleimages/textron_example.jpg?raw=true "Title")
+![textron](exampleimages/textron_example.jpg?raw=true "Title")
 ## Routes added app.py:
 `textron_router` - from modules/textron which consists of the inference code to get the bboxes from the textron .
 `doctr_router` - from modules/doctr_api which consists of the doctr inference code to get the bboxes (no change from the code in inference code of modules/main)
