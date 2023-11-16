@@ -29,6 +29,7 @@ router = APIRouter(
 async def doctr_layout_parser(
 	folder_path: str = Depends(save_uploaded_images),
 	model: ModelChoice = Form(ModelChoice.doctr),
+	language: str = Form('english'),
 	dilate: bool = Form(False),
 	left_right_percentages: int = Form(0),
 	header_percentage: int = Form(0),
@@ -51,7 +52,7 @@ async def doctr_layout_parser(
 	elif model == ModelChoice.v1_urdu:
 		ret = process_multiple_urdu_v1(folder_path)
 	elif model == ModelChoice.tesseract:
-		ret = process_multiple_tesseract(folder_path)
+		ret = process_multiple_tesseract(folder_path, language)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
@@ -62,6 +63,7 @@ async def layout_parser_swagger_only_demo(
 	image: UploadFile = File(...),
 	model: ModelChoice = Form(ModelChoice.doctr),
 	dilate: bool = Form(False),
+	language: str = Form('english'),
 ):
 	"""
 	This endpoint is only used to demonstration purposes.
@@ -79,7 +81,7 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_urdu_v1(image_path)
 	elif model == ModelChoice.tesseract:
 		folder_path = os.path.dirname(image_path)
-		regions = process_multiple_tesseract(folder_path)[0].regions
+		regions = process_multiple_tesseract(folder_path, language)[0].regions
 	else:
 		regions = process_image(image_path, model.value)
 	if dilate:

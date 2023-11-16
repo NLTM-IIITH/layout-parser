@@ -15,7 +15,7 @@ from doctr.models import ocr_predictor
 from fastapi import UploadFile
 from skimage.filters import threshold_otsu, threshold_sauvola
 
-from ..core.config import IMAGE_FOLDER
+from ..core.config import IMAGE_FOLDER, TESS_LANG
 from .models import *
 from .readingOrder import *
 
@@ -322,7 +322,7 @@ def find_peaks_valley(hpp):
 			break
 	return line_index		
 
-def process_multiple_tesseract(folder_path: str) -> List[LayoutImageResponse]:
+def process_multiple_tesseract(folder_path: str, language: str) -> List[LayoutImageResponse]:
 	"""
 	given the path of the image, this function returns a list
 	of bounding boxes of all the word detected regions.
@@ -334,7 +334,7 @@ def process_multiple_tesseract(folder_path: str) -> List[LayoutImageResponse]:
 		image_path = join(folder_path, filename)
 		image = cv2.imread(image_path)
 		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-		results = pytesseract.image_to_data(rgb, output_type=pytesseract.Output.DICT)
+		results = pytesseract.image_to_data(rgb, output_type=pytesseract.Output.DICT, lang=TESS_LANG.get(language, 'eng'))
 
 		regions = []
 		line = 1
