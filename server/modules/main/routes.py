@@ -188,7 +188,7 @@ async def layout_parser_swagger_only_demo_Paragraph_Reading_Order(
 
 #croppadfix
 @router.post('/visualize/croppadfixForTextBooks')
-async def layout_parser_swagger_only_demo_Reading_Order(
+async def layout_parser_swagger_only_demo_Crop_Pad_fix(
 	image: UploadFile = File(...)	
 ):
 	"""
