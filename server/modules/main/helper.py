@@ -500,7 +500,7 @@ def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_pe
 	return ret		
 
 #croppadfix
-def croppadfix(image_file):
+def cropPadFix(image_file):
 	# visualize_preds_dir(args.ImageFile)
 	cropped_TL, img_cropped = save_cropped(image_file)
 	# visualize_preds_dir('/home2/sreevatsa/cropped.png')
