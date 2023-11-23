@@ -13,10 +13,11 @@ from .helper import (Reading_Order_Generator, process_image,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_worddetector,
                      process_multiple_pages_ReadingOrderGenerator,
-                     save_uploaded_image)
+                     save_uploaded_image, croppadfix)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 from .readingOrder import *
+from .croppadfix import *
 
 router = APIRouter(
 	prefix='/layout',
@@ -183,4 +184,25 @@ async def layout_parser_swagger_only_demo_Paragraph_Reading_Order(
 	img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only)
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)
+
+
+#croppadfix
+@router.post('/visualize/croppadfixForTextBooks')
+async def layout_parser_swagger_only_demo_Reading_Order(
+	image: UploadFile = File(...)	
+):
+	"""
+	This endpoint is only used to demonstration purposes.
+	this endpoint returns/displays the input image with the
+	bounding boxes clearly marked in rectangles.
+
+	PS: This endpoint is not to be called from outside of swagger
+	"""
+	image_path = save_uploaded_image(image)
+	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
 	
+	img_cpf = croppadfix(image_path)
+	cv2.imwrite(save_location,img_cpf)
+	return FileResponse(save_location)
+
+
