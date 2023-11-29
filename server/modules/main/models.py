@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class ModelChoice(str, Enum):
 	doctr = 'doctr'
+	textron = 'textron'
 	craft = 'craft'
 	v2_doctr = 'v2_doctr'
 	worddetector = 'worddetector'
