@@ -9,6 +9,7 @@ import os
 from .modules.core.config import *
 from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
+from .modules.table.routes import router as table_router
 from .modules.postprocess.routes import router as postprocess_router
 from .modules.preprocess.routes import router as preprocess_router
 from .modules.preprocessv2.routes import router as preprocess_router_v2
@@ -44,3 +45,4 @@ app.include_router(preprocess_router_v2)
 app.include_router(main_router)
 app.include_router(cegis_router)
 app.include_router(postprocess_router)
+app.include_router(table_router)
