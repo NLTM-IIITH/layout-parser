@@ -2,11 +2,8 @@ import base64
 import json
 import os
 from os.path import join
-
 from fastapi import HTTPException
-
 from .models import ClassifyResponse
-
 
 def process_images(images: list[str], path: str='/home/layout/layout-parser/images'):
 	"""
@@ -53,4 +50,3 @@ def process_layout_output(
 			status_code=500,
 			detail='Error while parsing the ocr output'
 		)
-
