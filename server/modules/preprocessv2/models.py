@@ -7,6 +7,9 @@ class ModelChoice(str, Enum):
 	doctr = 'doctr'
 	tesseract = 'tesseract'
 
+class TaskChoice(str, Enum):
+	attributes = "font attribute result"
+	visualise = "visualisation"
 
 class BoundingBox(BaseModel):
 	x: int = Field(

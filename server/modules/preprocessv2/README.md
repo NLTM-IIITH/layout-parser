@@ -11,9 +11,9 @@ Created a module server/modules/iitb_font to have the endpoint for font attribut
 
 font endpoint - /layout/preprocess/font_v2
 
-visualize endpoint - /layout/preprocess/visualize_font
-
 inputs: list of images
+
+task: visualisation/font attribute
 
 model: doctr/tesseract
 
