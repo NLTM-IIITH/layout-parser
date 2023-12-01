@@ -7,7 +7,7 @@ An endpoint to return the font attributes (font size, font color, font decoratio
 
 ## API Endpoint and usage
 
-Created a module server/modules/iitb_font to have the endpoint for font attributes
+Created a module server/modules/preprocess to have the endpoint for font attributes
 
 font endpoint - /layout/preprocess/font_v2
 
