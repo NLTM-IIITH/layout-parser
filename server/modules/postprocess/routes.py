@@ -1,10 +1,12 @@
 from subprocess import call
 from tempfile import TemporaryDirectory
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 
 from .helper import process_images, process_layout_output
 from .models import MIResponse, PostprocessRequest, SIResponse
+from ..script_identification.models import ModelChoice
+from ..script_identification.helper import process_output
 
 router = APIRouter(
 	prefix='/layout/postprocess',
@@ -71,7 +73,7 @@ def identify_scenetext_language(si_request: PostprocessRequest) -> list[SIRespon
 	response_model=list[SIResponse],
 	response_model_exclude_none=True
 )
-def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_script(si_request: PostprocessRequest, model: ModelChoice, venv_path = "layout-parser-venv", si_venv_path = "server/modules/script_identification/layout-parser-venv-script-identification") -> list[SIResponse]:
 	"""
 	This is an endpoint for identifying the script of the word images.
 	this model was contributed by **Punjab university (@Ankur)** on 07-10-2022
@@ -86,8 +88,14 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 	"""
 	tmp = TemporaryDirectory(prefix='st_script')
 	process_images(si_request.images, tmp.name)
-	call(f'./script_iden_v1.sh {tmp.name}', shell=True)
-	return process_layout_output(tmp.name)
+	if(model==ModelChoice.default):
+		call(f'./script_iden_v1.sh {tmp.name}', shell=True)
+		ret = process_layout_output(tmp.name)
+	elif(model==ModelChoice.alexnet):
+		call(f'./script_iden_iitb.sh {tmp.name} {si_venv_path} {venv_path}', shell=True)
+		ret = process_output(tmp.name)
+	return ret
+	
 
 
 @router.post(

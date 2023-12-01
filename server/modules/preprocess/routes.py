@@ -3,6 +3,7 @@ from fastapi import APIRouter, File
 from ..main.helper import process_image, save_uploaded_image
 from .models import *
 
+
 router = APIRouter(
 	prefix='/layout/preprocess',
 	tags=['Preprocess'],

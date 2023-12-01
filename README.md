@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ```
 python main.py
 ```
-* To access the swagger UI go to [http://127.0.0.1:8888](http://127.0.0.1:8888)
+* To access the swagger UI go to [http://127.0.0.1:8888/layout/docs](http://127.0.0.1:8888/layout/docs)
 
 ## Authors
 
@@ -43,4 +43,3 @@ This project is licensed under the [NAME HERE] License - see the LICENSE.md file
 
 * [docTR](https://github.com/mindee/doctr)
 * [README.md Template](https://gist.github.com/DomPizzie/7a5ff55ffa9081f2de27c315f5018afc)
-
