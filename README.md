@@ -1,5 +1,4 @@
-# Layout Parser
-
+# Layout Parser API
 ## Description
 
 This is an API that facilitates the use Layout Parser models to detect and extract
@@ -38,7 +37,6 @@ Krishna Tulsyan
 [LinkedIn](https://www.linkedin.com/in/krishna-tulsyan/)
 
 <!-- ## License
-
 This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details -->
 
 ## Acknowledgments
