@@ -45,6 +45,13 @@ Only added the following libraries
 - scikit-learn
 - pytesseract
 
+Install tesseract-ocr in local system as well using following steps:
+- download tesseract-ocr in ubuntu
+  * sudo apt install tesseract-ocr
+  * sudo apt install libtesseract-dev
+- set path in helper.py line 26 (for ubuntu only)
+  * pytesseract.pytesseract.tesseract_cmd = r"/usr/bin/tesseract"
+
 ## Suggestions
 
 The deleting of the images existing in image directory is OS dependent in the original code. 
