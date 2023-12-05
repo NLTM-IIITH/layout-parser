@@ -34,7 +34,7 @@ async def get_font_properties_from_image(
 	
 	else:
 		font_regions = font_attribute_images[0].font_regions
-		img = cv2.imread(os.path.join(image_path,[i for i in os.listdir(image_path) if i.endswith(".png") or i.endswith(".jpg")][0]))
+		img = cv2.imread(os.path.join(image_path,[i for i in os.listdir(image_path) if i.endswith(".png") or i.endswith(".jpg") or i.endswith(".jpeg")][0]))
 
 		for font_region in font_regions:
 			bbox = font_region.bounding_box
