@@ -7,11 +7,13 @@ An endpoint to return the font attributes (font size, font color, font decoratio
 
 ## API Endpoint and usage
 
-Created a module server/modules/iitb_font to have the endpoint for font attributes
+Created a module server/modules/preprocess to have the endpoint for font attributes
 
-font endpoint - /layout/iitb-font/font
+font endpoint - /layout/preprocess/font_v2
 
 inputs: list of images
+
+task: visualisation/font attribute
 
 model: doctr/tesseract
 
@@ -25,6 +27,7 @@ Note: Default parameters work for most cases.
 
 ![Request](examples/request_image.png)
 ![Response](examples/response_image.png)
+![Visualise](examples/visualise_image.png)
 
 ## Modifications
 
