@@ -18,6 +18,7 @@ from skimage.filters import threshold_otsu, threshold_sauvola
 from ..core.config import IMAGE_FOLDER, TESS_LANG
 from .models import *
 from .readingOrder import *
+from .croppadfix import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
@@ -682,5 +683,12 @@ def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_pe
 
 	logtime(t, 'Time taken to generate Reading Order')
 	return ret		
+
+#croppadfix
+def cropPadFix(image_file):
+	# visualize_preds_dir(args.ImageFile)
+	cropped_TL, img_cropped = save_cropped(image_file)
+	# visualize_preds_dir('/home2/sreevatsa/cropped.png')
+	img = visualized_rescaled_bboxes_from_cropped(img_cropped,image_file,cropped_TL)
+	return img
 		
-	

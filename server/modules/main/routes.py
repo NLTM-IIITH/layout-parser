@@ -5,8 +5,9 @@ import cv2
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
+from .croppadfix import *
 from .dependencies import save_uploaded_images
-from .helper import (Reading_Order_Generator, process_image,
+from .helper import (Reading_Order_Generator, cropPadFix, process_image,
                      process_image_craft, process_image_urdu_v1,
                      process_image_worddetector, process_multiple_image_craft,
                      process_multiple_image_doctr,
@@ -195,4 +196,25 @@ async def layout_parser_swagger_only_demo_Paragraph_Reading_Order(
 	img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only)
 	cv2.imwrite(save_location, img)
 	return FileResponse(save_location)
+
+
+#croppadfix
+@router.post('/visualize/croppadfixForTextBooks')
+async def layout_parser_swagger_only_demo_Crop_Pad_fix(
+	image: UploadFile = File(...)	
+):
+	"""
+	This endpoint is only used to demonstration purposes.
+	this endpoint returns/displays the input image with the
+	bounding boxes clearly marked in rectangles.
+
+	PS: This endpoint is not to be called from outside of swagger
+	"""
+	image_path = save_uploaded_image(image)
+	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
 	
+	img_cpf = cropPadFix(image_path)
+	cv2.imwrite(save_location,img_cpf)
+	return FileResponse(save_location)
+
+
