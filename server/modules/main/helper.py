@@ -299,8 +299,9 @@ def horizontal_projections(image):
 def find_peaks_valley(hpp):
 	line_index = []
 	i = 0
+	prev_i = -1
 	while(i<len(hpp)-1):
-		#print("i==>",i)
+		print("i==>",i)
 		index1 = i
 		flag1 = 0
 		flag2 = 0
@@ -320,6 +321,9 @@ def find_peaks_valley(hpp):
 			i = index2	
 		if (flag1 == 0 and flag2 ==0):
 			break
+		if i == prev_i:
+			break
+		prev_i = i
 	return line_index		
 
 def process_multiple_tesseract(folder_path: str, language: str) -> List[LayoutImageResponse]:
@@ -334,7 +338,10 @@ def process_multiple_tesseract(folder_path: str, language: str) -> List[LayoutIm
 		image_path = join(folder_path, filename)
 		image = cv2.imread(image_path)
 		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-		results = pytesseract.image_to_data(rgb, output_type=pytesseract.Output.DICT, lang=TESS_LANG.get(language, 'eng'))
+		lang = TESS_LANG.get(language, 'eng')
+		print(lang)
+		results = pytesseract.image_to_data(rgb, output_type=pytesseract.Output.DICT, lang=lang)
+		print(results)
 
 		regions = []
 		line = 1
@@ -371,15 +378,19 @@ def process_multiple_urdu_v1(folder_path: str) -> List[LayoutImageResponse]:
 	"""
 	ret = []
 	for filename in os.listdir(folder_path):
-		image_path = folder_path + filename
-		image =cv2.imread(image_path)
+		# image_path = folder_path + filename
+		image_path = join(folder_path, filename)
+		image = cv2.imread(image_path)
 		image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 		_, image_w = image_gray.shape
 		image_thres = binarize_image_sauvola(image_gray)
+		print('binarize image completed')
 		hpp = horizontal_projections(image_thres)
+		print('horizontal projections completed')
 
 		#finding vally and peak of histigram
 		line_index = find_peaks_valley(hpp)
+		print('found the peaks and valleys')
 
 		regions = []
 		line = 1
@@ -510,10 +521,13 @@ def process_image_craft(image_path: str) -> List[Region]:
 	])
 	a = [join(IMAGE_FOLDER, i) for i in os.listdir(IMAGE_FOLDER) if i.endswith('txt')]
 	# TODO: add the proper error detection if the txt file is not found
-	a = a[0]
-	a = open(a, 'r').read().strip()
-	a = a.split('\n\n')
-	a = [i.strip().split('\n') for i in a]
+	try:
+		a = a[0]
+		a = open(a, 'r').read().strip()
+		a = a.split('\n\n')
+		a = [i.strip().split('\n') for i in a]
+	except:
+		a = []
 	ret = []
 	for i, line in enumerate(a):
 		for j in line:
