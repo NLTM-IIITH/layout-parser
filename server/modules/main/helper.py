@@ -1,24 +1,29 @@
+import datetime
 import os
 import shutil
 import time
 import uuid
 from collections import OrderedDict
+from datetime import date
 from os.path import basename, join
 from subprocess import check_output, run
-from tempfile import TemporaryDirectory
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
+import cv2
+import numpy as np
 import pytesseract
 import torch
+# from torchvision.transforms import Normalize
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from fastapi import UploadFile
 from skimage.filters import threshold_otsu, threshold_sauvola
 
 from ..core.config import IMAGE_FOLDER, TESS_LANG
+# from .croppadfix import *
+# from .croppadfix import save_cropped, visualized_rescaled_bboxes_from_cropped
 from .models import *
 from .readingOrder import *
-from .croppadfix import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
@@ -585,7 +590,7 @@ def process_image_worddetector(image_path: str) -> List[Region]:
 ####READING ORDER
 def doctr_predictions(directory):
 #     #Gets the predictions from the model
-    
+	
 	doc = DocumentFile.from_images(directory)
 	result = PREDICTOR_V2(doc)
 	dic = result.export()
@@ -683,6 +688,120 @@ def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_pe
 
 	logtime(t, 'Time taken to generate Reading Order')
 	return ret		
+		
+
+
+#========================================================================================================================
+# CROP AND FIX CODE
+# TODO: refactor it!
+#========================================================================================================================
+
+
+today = date.today()
+d=today.strftime("%d%m%y")
+
+current_time = datetime.datetime.now()
+formatted_time = current_time.strftime("%H%M%S")
+
+
+def rescaled_bboxes_from_cropped(img_cropped,img_source,top_left):
+	left = top_left[0]
+	top = top_left[1]
+	
+	img_source = cv2.cvtColor(cv2.imread(img_source),cv2.COLOR_BGR2RGB)
+	# target_h = img_source.shape[0]
+	# target_w = img_source.shape[1]
+	
+	img_cropp=[]
+	img_cropp.append(img_cropped)
+   
+	print(type(img_cropp))
+	print(img_cropp)
+	# result = ocr_predictor(img_cropp)
+	result = PREDICTOR_V2(img_cropp)
+	dic = result.export()
+	
+	page_dims = [page['dimensions'] for page in dic['pages']]
+	# print(page_dims)
+	regions = []
+	abs_coords = []
+	
+	regions = [[word for block in page['blocks'] for line in block['lines'] for word in line['words']] for page in dic['pages']]
+
+	abs_coords = [
+	[[int(round(word['geometry'][0][0] * dims[1]))+left, 
+	  int(round(word['geometry'][0][1] * dims[0]))+top, 
+	  int(round(word['geometry'][1][0] * dims[1]))+left, 
+	  int(round(word['geometry'][1][1] * dims[0]))+top] for word in words]
+	for words, dims in zip(regions, page_dims)
+	]
+
+#     pred = torch.Tensor(abs_coords[0])
+	# return (abs_coords,page_dims,regions)
+	return abs_coords
+
+def visualize_preds_dir(img_dir):
+	preds = doctr_predictions(img_dir)
+	img = cv2.cvtColor(cv2.imread(img_dir),cv2.COLOR_BGR2RGB)
+	for w in preds[0]:
+		cv2.rectangle(img,(w[0], w[1]),(w[2], w[3]),(0,0,255),1)
+	# plt.imshow(img)
+	cv2.imwrite('/home2/sreevatsa/output_test_doctrv2_{}_{}.png'.format(d,formatted_time), img)
+
+def visualized_rescaled_bboxes_from_cropped(img_cropped,img_source,top_left):
+	preds = rescaled_bboxes_from_cropped(img_cropped,img_source,top_left)
+	img = cv2.cvtColor(cv2.imread(img_source),cv2.COLOR_BGR2RGB)
+	for w in preds[0]:
+		cv2.rectangle(img,(w[0], w[1]),(w[2], w[3]),(0,0,255),1)
+	# plt.imshow(img)
+	# cv2.imwrite('/home2/sreevatsa/afterfixoutput_test_doctrv2_{}_{}.png'.format(d,formatted_time), cv2.cvtColor(img,cv2.COLOR_RGB2BGR))
+	return cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+
+def save_cropped(img_dir):
+	img = cv2.cvtColor(cv2.imread(img_dir),cv2.COLOR_BGR2RGB)
+	org_TL = (0,0)
+	org_BR = (img.shape[1],img.shape[0])
+
+	preds = doctr_predictions(img_dir)
+	
+	top1=[]
+	left1=[]
+	bottom1=[]
+	right1 = []
+
+	for i in preds[0]:
+		left1.append(i[0])
+		top1.append(i[1])
+		right1.append(i[2])
+		bottom1.append(i[3])
+
+	l = min(left1)
+	r = max(right1)
+	t = min(top1)
+	b = max(bottom1)
+	# print(l,r,t,b)
+
+	top_left = (l-20,t-20)
+	bottom_right = (r+20,b+20)
+
+	# print('cropped')
+	# print(top_left, bottom_right)
+
+	# difference_TL = (top_left[0]-org_TL[0],top_left[1]-org_TL[1])
+	# difference_BR = (abs(bottom_right[0]-org_BR[0]),abs(bottom_right[1]-org_BR[1]))
+	# print(difference_TL,difference_BR) 
+	x1,y1 = top_left
+	x2,y2 = bottom_right
+
+	cv2.rectangle(img,top_left, bottom_right,(0,255,255),2)
+	# plt.imshow(img1)
+	imgg1 = img[y1:y2, x1:x2]
+	# plt.imshow(imgg1)
+	# cv2.imwrite('/home2/sreevatsa/cropped_image.png',imgg1) #no need of saving cropped image
+
+	return top_left,imgg1
+
+
 
 #croppadfix
 def cropPadFix(image_file):
@@ -691,4 +810,3 @@ def cropPadFix(image_file):
 	# visualize_preds_dir('/home2/sreevatsa/cropped.png')
 	img = visualized_rescaled_bboxes_from_cropped(img_cropped,image_file,cropped_TL)
 	return img
-		
