@@ -160,7 +160,7 @@ Minibatch Generator for inference :
 """
 
 class InferenceImageDataset(Dataset):
-    def __init__(self,image_list,batch_size=250,transform=None):
+    def __init__(self,image_list,batch_size=64,transform=None):
         """
         Args:
             image_list (list): List of image paths.
