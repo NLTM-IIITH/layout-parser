@@ -18,3 +18,5 @@ TESS_LANG = {
 	'oriya': 'ori',
 	'urdu': 'urd',
 }
+
+TEXT_ATTB_MODEL_PATH = "/home/layout/models/text-attb-v1/direct_train_doc_level_+15_model_cnn.pth"

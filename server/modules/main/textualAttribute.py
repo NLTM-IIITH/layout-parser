@@ -1,47 +1,28 @@
 """
 HEADERS
 """
-import h5py
+import json
 import os
-import torch
-import numpy as np
-import json
-from scipy import misc
-os.environ['USE_TORCH'] = '1'
-import matplotlib.pyplot as plt
-from doctr.models import ocr_predictor
-from collections import OrderedDict
-from doctr.io import DocumentFile
+
 import cv2
-import json
-from PIL import Image, ImageFile
-import random
+import h5py
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import torchvision.transforms as transforms
-import torchvision.models as models
-from torch.utils.data import DataLoader
-from torchvision.datasets import ImageFolder
-import matplotlib.pyplot as plt
-from multiprocessing import Pool,cpu_count
-import os
-from PIL import Image
+from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
-import h5py
-import time
-from torch.utils.data import Dataset, DataLoader
-import matplotlib.pyplot as plt
-import shutil
+
+from server.modules.core.config import TEXT_ATTB_MODEL_PATH as BASE_MODEL_PATH
+
 from .helper import doctr_predictions
 
+os.environ['USE_TORCH'] = '1'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 """
 End
 """
 
-
-BASE_MODEL_PATH = "/home/layout/models/text-attb-v1/direct_train_doc_level_+15_model_cnn.pth"
 
 
 """
@@ -169,7 +150,7 @@ class JSONhelper:
         with open(f'{temp_file_path}/rev_map.json','w') as file:
             json.dump(reverse_map,file)
 
-        with h5py.File('/home/layout/misc/bbox_pixels.hdf5', 'w') as f:
+        with h5py.File(f'{temp_file_path}/bbox_pixels.hdf5', 'w') as f:
 	        f.create_dataset('bbox_pixels',data=bbox_pixels)
 
 

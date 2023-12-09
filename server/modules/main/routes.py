@@ -1,12 +1,12 @@
 import uuid
+# from .croppadfix import *
+from tempfile import TemporaryDirectory
 from typing import List
 
 import cv2
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from .croppadfix import *
-from tempfile import TemporaryDirectory
 from .dependencies import save_uploaded_images
 from .helper import (Reading_Order_Generator, cropPadFix, process_image,
                      process_image_craft, process_image_urdu_v1,
@@ -250,7 +250,7 @@ async def layout_parser_swagger_only_demo_Textual_Attribute(
 	"""
 
 	tmp = TemporaryDirectory(prefix="misc")
-	output_image = Visualization(image_location=image_path).visualize()
+	output_image = Visualization(image_location=image_path).visualize(temp_file=tmp.name)
 	"""
 	End
 	"""
