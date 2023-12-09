@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
 from .croppadfix import *
+from tempfile import TemporaryDirectory
 from .dependencies import save_uploaded_images
 from .helper import (Reading_Order_Generator, cropPadFix, process_image,
                      process_image_craft, process_image_urdu_v1,
@@ -19,6 +20,7 @@ from .helper import (Reading_Order_Generator, cropPadFix, process_image,
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 from .readingOrder import *
+from .textualAttribute import *
 
 router = APIRouter(
 	prefix='/layout',
@@ -217,4 +219,42 @@ async def layout_parser_swagger_only_demo_Crop_Pad_fix(
 	cv2.imwrite(save_location,img_cpf)
 	return FileResponse(save_location)
 
+@router.post('/visualize/textual_attribute')
+async def layout_parser_swagger_only_demo_Textual_Attribute(
+	image: UploadFile = File(...)
+):
+	"""
+	<h2>Description : </h2>\n
+	This API is used to classify the word based textual attributes like None, Bold, Italic or BoldItalic 	 based on the word level features (V1 version : December 8 2023). It currently runs well on Scanned Notices , Govt. Circulars and Lok Sabha documents.\n
 
+	<h2>Input : </h2>\n
+	You need to upload a single `.jpg` file document image. 
+
+	<h2>Interpretation of Output : </h2>\n
+	This endpoint is only used to demonstration purposes. \n
+	This endpoint returns/displays the input image with the
+	bounding boxes clearly marked in colored rectangles based on the textual attribute : \n
+	1. For no attribute : Blue color
+	2. For bold attribute: Red Color
+	3. For italic attribute : Green Color
+	4. For bold+italic attribute : Purple color
+
+	PS: This endpoint is not to be called from outside of swagger
+	"""
+
+	image_path = save_uploaded_image(image) 
+	# saving the uploaded image
+
+	"""
+	My working and model functions (don't edit)
+	"""
+
+	tmp = TemporaryDirectory(prefix="misc")
+	output_image = Visualization(image_location=image_path).visualize()
+	"""
+	End
+	"""
+
+	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
+	cv2.imwrite(save_location,output_image)
+	return FileResponse(save_location)
