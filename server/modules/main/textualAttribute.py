@@ -212,8 +212,8 @@ class Model:
         self.model_instance.load_state_dict(state_pretrained)
         self.model_instance = self.model_instance.to(device)
     
-    def predict(self):
-        json_helper = JSONhelper()
+    def predict(self,temp_file_path):
+        json_helper = JSONhelper(temp_file_path=temp_file_path)
         test_data = InferenceImageDataset(image_list=json_helper.model_input_retrieve(),transform=ToTensor())
         global_output_tensor = torch.tensor([])
         self.get_model()
@@ -254,7 +254,7 @@ class Visualization:
         json_instance = JSONhelper(temp_file_path=temp_file)
         json_instance.generate_bbox_json_files(self.image_location,temp_file)
         model = Model()
-        output_list = model.predict()
+        output_list = model.predict(temp_file_path=temp_file)
         bbox_info,rev_map = json_instance.retrieve_json()
 
         for cnt in range(len(output_list)):
