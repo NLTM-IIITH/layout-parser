@@ -9,13 +9,21 @@ from os.path import basename, join
 from subprocess import check_output, run
 from typing import Any, List, Tuple
 
+import torch
+import numpy as np
+# Let's pick the desired backend
+# os.environ['USE_TF'] = '1'
+os.environ['USE_TORCH'] = '1'
+import matplotlib.pyplot as plt
+from doctr.models import ocr_predictor
+from collections import OrderedDict
+from doctr.io import DocumentFile
+
 import cv2
 import numpy as np
 import pytesseract
 import torch
 # from torchvision.transforms import Normalize
-from doctr.io import DocumentFile
-from doctr.models import ocr_predictor
 from fastapi import UploadFile
 from skimage.filters import threshold_otsu, threshold_sauvola
 
