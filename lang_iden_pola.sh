@@ -25,5 +25,5 @@ fi
 docker run --rm --gpus all --net host \
 	-v $DATA_DIR:/data \
 	-v $MODEL_DIR:/model \
-	langiden:handwritten \
+	langiden:pola \
 	python infer.py $LANGUAGE

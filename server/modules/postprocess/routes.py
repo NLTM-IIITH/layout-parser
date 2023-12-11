@@ -48,11 +48,11 @@ def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResp
 	return process_layout_output(tmp.name)
 
 @router.post(
-	'/language/pola',
+	'/language/pola/{language}',
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
 )
-def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResponse]:
+def identify_handwritten_language(si_request: PostprocessRequest, language: str) -> list[SIResponse]:
 	"""
 	This is the endpoint for classifying the language of the **handwritten** images.
 	this model works for all the 14 language (13 Indian + english)
@@ -60,9 +60,10 @@ def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResp
 	API inputs a list of images in base64 encoded string and outputs a list
 	of objects containing **"text"** as key and **language** as value
 	"""
+	print(language)
 	tmp = TemporaryDirectory(prefix='language_classify')
 	process_images(si_request.images, tmp.name)
-	call(f'./lang_iden_pola.sh {tmp.name}', shell=True)
+	call(f'./lang_iden_pola.sh {tmp.name} {language}', shell=True)
 	return process_layout_output(tmp.name)
 
 @router.post(
