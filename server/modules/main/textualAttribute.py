@@ -1,23 +1,34 @@
 """
 HEADERS
 """
+
+import torch
+import numpy as np
+import os
+# Let's pick the desired backend
+# os.environ['USE_TF'] = '1'
+os.environ['USE_TORCH'] = '1'
+import matplotlib.pyplot as plt
+from doctr.models import ocr_predictor
+from collections import OrderedDict
+from doctr.io import DocumentFile
+from .helper import doctr_predictions,PREDICTOR_V2,convert_geometry_to_bbox
+
 import json
 import os
-
+import shutil
 import cv2
 import h5py
-import numpy as np
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
-
+from tempfile import TemporaryDirectory
 from server.modules.core.config import TEXT_ATTB_MODEL_PATH as BASE_MODEL_PATH
 
-from .helper import doctr_predictions
+from os.path import basename, join
+from .models import *
 
-os.environ['USE_TORCH'] = '1'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 """
 End
@@ -121,28 +132,36 @@ class JSONhelper:
         reverse_map={}
         bbox_pixels=[]
 
+        temp2 = TemporaryDirectory(prefix="img")
+        folder_path = image_location
+
+        if os.path.isfile(image_location):
+            shutil.copy(image_location,temp2.name)
+            folder_path = temp2.name
+        
+        count=0
         processor = ProcessImageBBox()
 
-        image = cv2.imread(image_location,cv2.IMREAD_GRAYSCALE)
-        bbox_prediction = doctr_predictions(image_location)
-        json_dict[image_location] = []
-        count=0
+        for img in os.listdir(folder_path):
+            image = cv2.imread(os.path.join(folder_path,img),cv2.IMREAD_GRAYSCALE)
+            bbox_prediction = doctr_predictions(os.path.join(folder_path,img))
+            json_dict[img] = []
 
-        for w in bbox_prediction[0]:
-            word = np.array(image[w[1]:w[3],w[0]:w[2]])
-            if(word.shape[0]>0 and word.shape[1]>0):
-                json_dict[image_location].append({})
-                json_dict[image_location][len(json_dict[image_location])-1]['bb_dim'] = [w[0],w[1],w[2],w[3]]
-                json_dict[image_location][len(json_dict[image_location])-1]['bb_ids'] = []
-                json_dict[image_location][len(json_dict[image_location])-1]['bb_ids'].append({})
-                json_dict[image_location][len(json_dict[image_location])-1]['bb_ids'][len(json_dict[image_location][len(json_dict[image_location])-1]['bb_ids'])-1]['id'] = count
+            for w in bbox_prediction[0]:
+                word = np.array(image[w[1]:w[3],w[0]:w[2]])
+                if(word.shape[0]>0 and word.shape[1]>0):
+                    json_dict[img].append({})
+                    json_dict[img][len(json_dict[img])-1]['bb_dim'] = [w[0],w[1],w[2],w[3]]
+                    json_dict[img][len(json_dict[img])-1]['bb_ids'] = []
+                    json_dict[img][len(json_dict[img])-1]['bb_ids'].append({})
+                    json_dict[img][len(json_dict[img])-1]['bb_ids'][len(json_dict[img][len(json_dict[img])-1]['bb_ids'])-1]['id'] = count
 
-                reverse_map[str(count)]={}
-                reverse_map[str(count)]['file'] = image_location
-                reverse_map[str(count)]['index'] = len(json_dict[image_location])-1
+                    reverse_map[str(count)]={}
+                    reverse_map[str(count)]['file'] = img
+                    reverse_map[str(count)]['index'] = len(json_dict[img])-1
 
-                bbox_pixels.append(processor.centralizer(word,height=56,width=400))
-                count+=1
+                    bbox_pixels.append(processor.centralizer(word,height=56,width=400))
+                    count+=1
 
         with open(f'{temp_file_path}/bbox_info.json','w') as file:
             json.dump(json_dict,file)
@@ -151,7 +170,7 @@ class JSONhelper:
             json.dump(reverse_map,file)
 
         with h5py.File(f'{temp_file_path}/bbox_pixels.hdf5', 'w') as f:
-	        f.create_dataset('bbox_pixels',data=bbox_pixels)
+            f.create_dataset('bbox_pixels',data=bbox_pixels)
 
 
 
@@ -220,19 +239,21 @@ class Model:
         is_use_cuda = torch.cuda.is_available()
 
         self.model_instance.eval()
-        for input_batch in test_data:
-            if input_batch==None:
-                break
-            if is_use_cuda:
-                input_batch = input_batch.cuda()
 
-            outputs = self.model_instance(input_batch)
-            outputs = F.softmax(outputs, dim=1)
+        with torch.no_grad():
+            for input_batch in test_data:
+                if input_batch==None:
+                    break
+                if is_use_cuda:
+                    input_batch = input_batch.cuda()
 
-            global_output_tensor = torch.cat([global_output_tensor,torch.argmax(outputs,dim=1).cpu()],dim=0)
+                outputs = self.model_instance(input_batch)
+                outputs = F.softmax(outputs, dim=1)
+
+                global_output_tensor = torch.cat([global_output_tensor,torch.argmax(outputs,dim=1).cpu()],dim=0)
         
-        final_output_classlist = global_output_tensor.cpu().tolist()
-        return final_output_classlist
+            final_output_classlist = global_output_tensor.cpu().tolist()
+            return final_output_classlist
 
 
 """
@@ -266,3 +287,51 @@ class Visualization:
 """
 End
 """
+
+
+def process_multiple_pages_TextualAttribute(folder_path,temp_file_path):
+    json_helper = JSONhelper(temp_file_path=temp_file_path)
+    json_helper.generate_bbox_json_files(folder_path,temp_file_path=temp_file_path)
+    model = Model()
+    output_list = model.predict(temp_file_path=temp_file_path)
+
+    files = [join(folder_path, i) for i in os.listdir(folder_path)]
+    doc = DocumentFile.from_images(files)
+    a = PREDICTOR_V2(doc)
+    ret = []
+    cnt=0
+    prev_cnt=0
+    for idx in range(len(files)):
+        page = a.pages[idx]
+		# in the format (height, width)
+        dim = page.dimensions
+        lines = []
+        for i in page.blocks:
+            lines += i.lines
+            regions = []
+        map_int_to_str= {0:'none',1:'bold',2:'italic'}
+        for i, line in enumerate(lines):
+            for word in line.words:
+                attb = {'none':False,'bold':False,'italic':False}
+                if output_list[cnt]==3:
+                    attb[map_int_to_str[1]]=True
+                    attb[map_int_to_str[2]]=True
+                else:
+                    attb[map_int_to_str[output_list[cnt]]]=True
+
+                regions.append(
+					Region.from_bounding_box(convert_geometry_to_bbox(word.geometry, dim, padding=5),
+                              attb=attb,
+                              order=cnt-prev_cnt,
+                              line=i+1)
+				)
+                cnt+=1
+        prev_cnt = cnt
+
+        ret.append(
+			LayoutImageResponse(
+				regions=regions.copy(),
+				image_name=basename(files[idx])
+			)
+		)
+    return ret
