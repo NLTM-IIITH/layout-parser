@@ -2,31 +2,34 @@
 HEADERS
 """
 
-import torch
-import numpy as np
 import os
+
+import numpy as np
+import torch
+
 # Let's pick the desired backend
 # os.environ['USE_TF'] = '1'
 os.environ['USE_TORCH'] = '1'
-import matplotlib.pyplot as plt
-from doctr.models import ocr_predictor
-from collections import OrderedDict
-from doctr.io import DocumentFile
-from .helper import doctr_predictions,PREDICTOR_V2,convert_geometry_to_bbox
-
 import json
 import os
 import shutil
+from collections import OrderedDict
+from os.path import basename, join
+from tempfile import TemporaryDirectory
+
 import cv2
 import h5py
+import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch.nn.functional as F
+from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
-from tempfile import TemporaryDirectory
+
 from server.modules.core.config import TEXT_ATTB_MODEL_PATH as BASE_MODEL_PATH
 
-from os.path import basename, join
+from .helper import PREDICTOR_V2, convert_geometry_to_bbox, doctr_predictions
 from .models import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -309,14 +312,14 @@ def process_multiple_pages_TextualAttribute(folder_path,temp_file_path):
         for i in page.blocks:
             lines += i.lines
             regions = []
-        map_int_to_str= {0:'none',1:'bold',2:'italic'}
+        map_int_to_str= {1:'bold',2:'italic'}
         for i, line in enumerate(lines):
             for word in line.words:
-                attb = {'none':False,'bold':False,'italic':False}
+                attb = {'bold':False,'italic':False}
                 if output_list[cnt]==3:
                     attb[map_int_to_str[1]]=True
                     attb[map_int_to_str[2]]=True
-                else:
+                elif output_list[cnt] != 0:
                     attb[map_int_to_str[output_list[cnt]]]=True
 
                 regions.append(

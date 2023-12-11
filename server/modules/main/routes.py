@@ -57,6 +57,7 @@ async def doctr_layout_parser(
 	elif model == ModelChoice.tesseract:
 		ret = process_multiple_tesseract(folder_path, language)
 	elif model ==ModelChoice.v1_textAttb:
+		# order is working
 		tmp = TemporaryDirectory(prefix="misc")
 		ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
 	if dilate:
