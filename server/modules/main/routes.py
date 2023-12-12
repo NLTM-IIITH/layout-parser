@@ -16,7 +16,7 @@ from .helper import (Reading_Order_Generator, cropPadFix, process_image,
                      process_multiple_image_worddetector,
                      process_multiple_pages_ReadingOrderGenerator,
                      process_multiple_tesseract, process_multiple_urdu_v1,
-                     save_uploaded_image)
+                     save_uploaded_image, process_multiple_image_cropPadFix)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 from .readingOrder import *
@@ -60,6 +60,8 @@ async def doctr_layout_parser(
 		# order is working
 		tmp = TemporaryDirectory(prefix="misc")
 		ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
+	elif model == ModelChoice.cropPadFix:
+		ret = process_multiple_image_cropPadFix(folder_path)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
