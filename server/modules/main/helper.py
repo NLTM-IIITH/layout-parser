@@ -94,6 +94,31 @@ def convert_geometry_to_bbox(
 		h=y2-y1 + padding,
 	)
 
+#add top and left to each coordinates to rescale back the bounding boxes onto original page dimensions
+def convert_geometry_to_bbox_for_cropPadFix(
+	geometry: Tuple[Tuple[float, float], Tuple[float, float]],
+	dim: Tuple[int, int],
+	padding: int = 0,
+	left: int = 0,
+	top: int = 0
+) -> BoundingBox:
+	"""
+	converts the geometry that is fetched from the doctr models
+	to the standard bounding box model
+	format of the geometry is ((Xmin, Ymin), (Xmax, Ymax))
+	format of the dim is (height, width)
+	"""
+	x1 = int(geometry[0][0] * dim[1]) + left
+	y1 = int(geometry[0][1] * dim[0]) + top
+	x2 = int(geometry[1][0] * dim[1]) + left
+	y2 = int(geometry[1][1] * dim[0]) + top
+	return BoundingBox(
+		x=x1 - padding,
+		y=y1 - padding,
+		w=x2-x1 + padding,
+		h=y2-y1 + padding,
+	)
+
 def load_craft_container():
 	command = 'docker container ls --format "{{.Names}}"'
 	a = check_output(command, shell=True).decode('utf-8').strip().split('\n')
@@ -748,6 +773,13 @@ def rescaled_bboxes_from_cropped(img_cropped,img_source,top_left):
 	# return (abs_coords,page_dims,regions)
 	return abs_coords
 
+def rescaled_bboxes_from_cropped_forMultiple(img_cropped_s,TLs):
+	# result = ocr_predictor(img_cropp)
+	result = PREDICTOR_V2(img_cropped_s)
+	
+	return result, TLs
+
+
 def visualize_preds_dir(img_dir):
 	preds = doctr_predictions(img_dir)
 	img = cv2.cvtColor(cv2.imread(img_dir),cv2.COLOR_BGR2RGB)
@@ -809,7 +841,14 @@ def save_cropped(img_dir):
 
 	return top_left,imgg1
 
-
+def save_cropped_loop_forMultiple(files):
+	TLs=[]
+	img_cropped_s = []
+	for i in files:
+		cropped_TL, img_cropped = save_cropped(i)
+		TLs.append(cropped_TL)
+		img_cropped_s.append(img_cropped)
+	return TLs, img_cropped_s	
 
 #croppadfix
 def cropPadFix(image_file):
@@ -818,3 +857,54 @@ def cropPadFix(image_file):
 	# visualize_preds_dir('/home2/sreevatsa/cropped.png')
 	img = visualized_rescaled_bboxes_from_cropped(img_cropped,image_file,cropped_TL)
 	return img
+
+def cropPadFixJsonResponse(files):
+	TLs, img_cropped_s = save_cropped_loop_forMultiple(files)
+	result, TLs = rescaled_bboxes_from_cropped_forMultiple(img_cropped_s, TLs).
+
+	return result, TLs
+	
+def process_multiple_image_cropPadFix(folder_path: str) -> List[LayoutImageResponse]:
+	"""
+	given the path of the image, this function returns a list
+	of bounding boxes of all the word detected regions.
+
+	@returns list of BoundingBox class
+	"""
+
+	files = [join(folder_path, i) for i in os.listdir(folder_path)]
+	t = time.time()
+	
+	a, TLs = cropPadFixJsonResponse(files)
+	logtime(t, 'Time taken to perform doctr inference')
+
+	t = time.time()
+	ret = []
+	for idx in range(len(files)):
+		left = TLs[idx][0]
+		top = TLs[idx][1]
+		page = a.pages[idx]
+		# in the format (height, width)
+		dim = page.dimensions
+		lines = []
+		for i in page.blocks:
+			lines += i.lines
+		regions = []
+		for i, line in enumerate(lines):
+			for word in line.words:
+				regions.append(
+					Region.from_bounding_box(
+						convert_geometry_to_bbox_for_cropPadFix(word.geometry, dim, padding=5, left, top),
+						line=i+1,
+					)
+				)
+		ret.append(
+			LayoutImageResponse(
+				regions=regions.copy(),
+				image_name=basename(files[idx])
+			)
+		)
+	logtime(t, 'Time taken to process the doctr output')
+	return ret
+	
+	
