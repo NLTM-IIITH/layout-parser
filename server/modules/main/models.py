@@ -13,6 +13,7 @@ class ModelChoice(str, Enum):
 	v1_textAttb = 'v1_textAttb'
 	v1_urdu = 'v1_urdu'
 	tesseract = 'tesseract'
+	cropPadFix = 'cropPadFix'
 
 
 class BoundingBox(BaseModel):
