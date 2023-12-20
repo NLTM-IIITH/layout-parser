@@ -145,6 +145,3 @@ staticfiles
 
 # custom files and folders to exclude
 images
-
-# textron dependencies
-pickle_U.pkl
