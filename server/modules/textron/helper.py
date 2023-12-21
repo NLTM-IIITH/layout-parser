@@ -1,7 +1,7 @@
 import os
 import shutil
 import json
-from subprocess import call
+from subprocess import call,check_output
 import time
 import uuid
 from collections import OrderedDict
@@ -29,7 +29,10 @@ def process_textron_output(folder_path: str) -> List[LayoutImageResponse]:
     try:
         # call(f'./textron.sh', shell=True)
         print(os.listdir(IMAGE_FOLDER))
-        call(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/sample/data','textron:1'])
+        try:
+            check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
+        except:
+            check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
         a = open(IMAGE_FOLDER+'/out.json', 'r').read().strip()
         a = json.loads(a)
         ret=[]
@@ -55,7 +58,10 @@ def process_textron_output(folder_path: str) -> List[LayoutImageResponse]:
         print(e)
 
 def textron_visualize(image_path: str) -> List[Region]:
-    call(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/sample/data','textron:1'])
+    try:
+        check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
+    except:
+        check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
     a = open(IMAGE_FOLDER+'/out.json', 'r').read().strip()
     a = json.loads(a)
     for page in a.keys():
