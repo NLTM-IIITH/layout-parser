@@ -9,20 +9,21 @@ from os.path import basename, join
 from subprocess import check_output, run
 from typing import Any, List, Tuple
 
-import torch
 import numpy as np
+import torch
+
 # Let's pick the desired backend
 # os.environ['USE_TF'] = '1'
 os.environ['USE_TORCH'] = '1'
-import matplotlib.pyplot as plt
-from doctr.models import ocr_predictor
 from collections import OrderedDict
-from doctr.io import DocumentFile
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import pytesseract
 import torch
+from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
 # from torchvision.transforms import Normalize
 from fastapi import UploadFile
 from skimage.filters import threshold_otsu, threshold_sauvola
@@ -860,7 +861,7 @@ def cropPadFix(image_file):
 
 def cropPadFixJsonResponse(files):
 	TLs, img_cropped_s = save_cropped_loop_forMultiple(files)
-	result, TLs = rescaled_bboxes_from_cropped_forMultiple(img_cropped_s, TLs).
+	result, TLs = rescaled_bboxes_from_cropped_forMultiple(img_cropped_s, TLs)
 
 	return result, TLs
 	
@@ -894,7 +895,7 @@ def process_multiple_image_cropPadFix(folder_path: str) -> List[LayoutImageRespo
 			for word in line.words:
 				regions.append(
 					Region.from_bounding_box(
-						convert_geometry_to_bbox_for_cropPadFix(word.geometry, dim, padding=5, left, top),
+						convert_geometry_to_bbox_for_cropPadFix(word.geometry, dim, padding=5, left=left, top=top),
 						line=i+1,
 					)
 				)
