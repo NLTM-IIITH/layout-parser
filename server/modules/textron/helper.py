@@ -30,9 +30,9 @@ def process_textron_output(folder_path: str) -> List[LayoutImageResponse]:
         # call(f'./textron.sh', shell=True)
         print(os.listdir(IMAGE_FOLDER))
         try:
-            check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
+            check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
         except:
-            check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
+            check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
         a = open(IMAGE_FOLDER+'/out.json', 'r').read().strip()
         a = json.loads(a)
         ret=[]
@@ -59,9 +59,9 @@ def process_textron_output(folder_path: str) -> List[LayoutImageResponse]:
 
 def textron_visualize(image_path: str) -> List[Region]:
     try:
-        check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
+        check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
     except:
-        check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/textron/data','textron:1'])
+        check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
     a = open(IMAGE_FOLDER+'/out.json', 'r').read().strip()
     a = json.loads(a)
     for page in a.keys():

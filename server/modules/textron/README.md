@@ -17,3 +17,6 @@ docker run --rm --net host -v IMAGE_FOLDER:/textron/data textron:1
 Where IMAGE_FOLDER is the path in `server/modules/core/config.py`.
 ### Textron Inference : /layout/
 ### Textron Visualization : /layout/visualize/
+
+## Note
+The Following Module downloads the required doctr models in the build image.
