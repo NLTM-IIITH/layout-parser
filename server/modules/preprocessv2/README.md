@@ -2,8 +2,7 @@
 
 ## Description
 
-An endpoint to return the font attributes (font size, font color, font decoration) has been integrated to the code.
-
+An endpoint to return the font attributes (font size, font color, font decoration) has been integrated to the code. Implemented in docker. Processing code repository [here](https://github.com/iitb-research-code/docker-text-attribute), use to build docker image.
 
 ## API Endpoint and usage
 
@@ -39,11 +38,7 @@ In app.py line 10 imported router from preprocessv2, which was imported from pre
 
 ### Requirements
 
-Only added the following libraries
-
-- beautifulsoup4
-- scikit-learn
-- pytesseract
+No need for external requirements as docker container is used for running
 
 ## Suggestions
 
@@ -51,6 +46,8 @@ The deleting of the images existing in image directory is OS dependent in the or
 
 server/modules/preprocessv2/helper.py has a simple function that can be used to delete files in the directory
 
-## Queries
+## Implementation of Docker
 
-As far as I can observe, the exisiting server/modules/preprocess seems to be a placeholder that needs implementation. None of the endpoints in the module work.
+1) Can have models available in a seperate directory and mount it when running docker container.
+
+2) Can use docker image with model loaded in already.
