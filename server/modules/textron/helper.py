@@ -16,7 +16,6 @@ from fastapi import UploadFile
 from ..core.config import *
 from .models import *
 
-# TODO: remove this line and try to set the env from the docker-compose file.
 
 def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
