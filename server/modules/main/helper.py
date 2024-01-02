@@ -393,6 +393,9 @@ def process_multiple_tesseract(folder_path: str, language: str) -> List[LayoutIm
 			y = results['top'][i]
 			w = results['width'][i]
 			h = results['height'][i]
+			if h < 10:
+				print(f'Skipping a region with ({x}, {y}, {w}, {h})')
+				continue
 			regions.append(Region(
 				bounding_box=BoundingBox(
 					x=x,
