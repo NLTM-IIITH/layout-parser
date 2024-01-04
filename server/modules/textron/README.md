@@ -1,21 +1,28 @@
-# Textron : Layout API : Text Detect 
-![textron](exampleimages/textron_example.jpg?raw=true "Title")
-## Routes added app.py:
-`textron_router` - from modules/textron which consists of the inference code to get the bboxes from the textron .
-`doctr_router` - from modules/doctr_api which consists of the doctr inference code to get the bboxes (no change from the code in inference code of modules/main)
+# Textron
 
-## textron_api :
-1. dependencies.py - from modules/main
-2. helper.py - process_images_textron function for inference and textron_visulaize for visualization.
-3. model.py -from modules/main containes Response and Request Structure for layout parser.
-- `TEXTRON FILES`:
-1. main.py - main file for running the textron and giving output
-2. server/ , src/ , utilities/ , spear/ are the textron dependencies.
+## Module Added
+```
 
-### Possible Issues IMP:
-1. Textron requires the paths to a input folder having a images folder and a output folder path which is server/modules/textron_results it is a necessary folder as it has a params file which is required for inference.
-2. all required paths are in server/modules/core/config.py - all the paths in the config are relative to the layout-parser-api folder and are necessary to be looked out for.
+├── server/modules/textron
+|   ├── helper.py                       # consists of inference code and the code for visualizaiton
+|   ├── models.py                       # consists of required input/output structure
 
-## folders added 
-1. /images/ - all the input files will come in the folder.
-2. /server/modules/textron/textron_results - all the output from the textron will come in this folder.
+
+```
+Added the routes in `server/modules/main/routes.py` in `doctr_layout_parser` and `layout_parser_swagger_only_demo`.
+## Load from Docker Hub
+```
+docker pull shouryatyagi222/textron:1
+```
+## Docker command used :
+```
+docker run --rm --net host -v IMAGE_FOLDER:/data textron:1
+```
+Where `IMAGE_FOLDER` is the path in `server/modules/core/config.py`.
+The `IMAGE_FOLDER` is the path where the Input Images are saved and the json output are saved.
+Note: `IMAGE_FOLDER` must be the absolute path
+### Textron Inference : /layout/
+### Textron Visualization : /layout/visualize/
+
+## Note
+The Following Module downloads the required doctr models in the build image.
