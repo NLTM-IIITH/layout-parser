@@ -38,8 +38,9 @@ async def get_font_properties_from_image(
 		pickle.dump(config,f)
 
 	print("Calling docker")
-	model_dir = os.path.join(os.getcwd(),"models")
-	call(f"docker run --rm -v {temp.name}:/model/data -v{model_dir}:/root/.cache/doctr/models textattrib")
+	# model_dir = os.path.join(os.getcwd(),"models")
+	# call(f"docker run --rm -v {temp.name}:/model/data -v{model_dir}:/root/.cache/doctr/models textattrib")
+	call(f"docker run --rm -v {temp.name}:/model/data textattrib")
 	print("Done docker")
 	
 
