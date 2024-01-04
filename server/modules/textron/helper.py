@@ -1,17 +1,9 @@
 import os
-import shutil
 import json
 from subprocess import call,check_output
 import time
-import uuid
-from collections import OrderedDict
-from os.path import join
-from subprocess import check_output, run
-from tempfile import TemporaryDirectory
+from subprocess import check_output
 from typing import List, Tuple
-
-import torch
-from fastapi import UploadFile
 
 from ..core.config import *
 from .models import *
@@ -21,17 +13,20 @@ def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
 
 t = time.time()
+models_folder_name='models'
+models_dir_path=os.path.join(os.path.dirname(IMAGE_FOLDER),models_folder_name)
+docker_image_name='textron:1'
 
-
+def run_docker():
+    try:
+        check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data',docker_image_name])
+    except:
+        check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data',docker_image_name])
 
 def process_textron_output(folder_path: str) -> List[LayoutImageResponse]:
     try:
         # call(f'./textron.sh', shell=True)
-        print(os.listdir(IMAGE_FOLDER))
-        try:
-            check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
-        except:
-            check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
+        run_docker()
         a = open(IMAGE_FOLDER+'/out.json', 'r').read().strip()
         a = json.loads(a)
         ret=[]
@@ -57,10 +52,11 @@ def process_textron_output(folder_path: str) -> List[LayoutImageResponse]:
         print(e)
 
 def textron_visualize(image_path: str) -> List[Region]:
-    try:
-        check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
-    except:
-        check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
+    # try:
+    #     check_output(['docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
+    # except:
+    #     check_output(['sudo','docker','run','--rm','--net','host','-v',f'{IMAGE_FOLDER}:/data','textron:1'])
+    run_docker()
     a = open(IMAGE_FOLDER+'/out.json', 'r').read().strip()
     a = json.loads(a)
     for page in a.keys():
