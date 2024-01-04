@@ -40,19 +40,6 @@ In app.py line 10 imported router from preprocessv2, which was imported from pre
 
 No need for external requirements as docker container is used for running
 
-Install tesseract-ocr in local system as well using following steps:
-- download tesseract-ocr in ubuntu
-  * sudo apt install tesseract-ocr
-  * sudo apt install libtesseract-dev
-- set path in helper.py line 26 (for ubuntu only)
-  * pytesseract.pytesseract.tesseract_cmd = r"/usr/bin/tesseract"
-
-## Suggestions
-
-The deleting of the images existing in image directory is OS dependent in the original code. 
-
-server/modules/preprocessv2/helper.py has a simple function that can be used to delete files in the directory
-
 ## Implementation of Docker
 
 1) Can have models available in a seperate directory and mount it when running docker container.
