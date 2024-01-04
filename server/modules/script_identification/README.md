@@ -2,26 +2,22 @@
 
 ## Description
 
-This module facilitates the integration of IITB script-identification models
+This module facilitates the integration of IITB script-identification models using Docker.
 
 ### Setup instructions
 * Shift directory
 ``` 
 cd server/modules/script_identification
 ```
-* Create a python 3.6+ virtualenv
+* Build docker image
 ```
-python -m venv layout-parser-venv-script-identification
-```
-* Install the required python packages
-```
-pip install -r requirements_script_identification.txt
+docker build -t script-identification .
 ```
 
 ### Changes made for script-identification model integration:
 * Additional code is defined in script_identification module (server>modules>script_identification)
 * script-identification request endpoint updated in server>modules>postprocess>routes.py to accomodate ModelChoice as additional input and to accomodate model selection
-* Endpoint function executes shell script script_iden_iitb.sh, which calls infer.py
+* Endpoint function runs docker container
 * In script_identification module:
   * infer.py performs inference and saves output as output.json
   * helper.py has function process_output which reads output.json and returns output in response format
