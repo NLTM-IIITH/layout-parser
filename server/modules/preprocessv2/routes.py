@@ -1,11 +1,15 @@
+import json
 import os
+import pickle
 import cv2
-from fastapi import File, UploadFile, Form
-from fastapi.responses import FileResponse
+from fastapi import UploadFile, Form
+from fastapi.responses import Response
+from subprocess import call
+from tempfile import TemporaryDirectory
 
 from .models import *
 
-from .helper import save_uploaded_images, save_uploaded_image, process_image_font_attributes_doctr, process_image_font_attributes_tesseract
+from .helper import save_uploaded_images
 
 from ..preprocess.routes import router
 
@@ -21,80 +25,35 @@ async def get_font_properties_from_image(
 	"""
 	This endpoint returns the font attributes of text from images.
 	"""
+	temp = TemporaryDirectory()
+	image_path = save_uploaded_images(images,temp.name)
+	
+	config = {
+		"model": "doctr" if model == ModelChoice.doctr else "tesseract",
+		"k_size": k_size,
+		"bold_threshold": bold_threshold
+	}
 
-	image_path = save_uploaded_images(images)
+	with open(os.path.join(image_path,"config"),"wb") as f:
+		pickle.dump(config,f)
+
+	print("Calling docker")
+	# model_dir = os.path.join(os.getcwd(),"models")
+	# call(f"docker run --rm -v {temp.name}:/model/data -v{model_dir}:/root/.cache/doctr/models textattrib")
+	call(f"docker run --rm -v {temp.name}:/model/data textattrib")
+	print("Done docker")
 	
-	if model == ModelChoice.doctr:
-		font_attribute_images = process_image_font_attributes_doctr(image_path,k_size=k_size,bold_threshold=bold_threshold)
-	elif model == ModelChoice.tesseract:
-		font_attribute_images = process_image_font_attributes_tesseract(image_path,k_size=k_size,bold_threshold=bold_threshold)
-	
+
 	if task == TaskChoice.attributes:
-		return FontAttributesResponse(images=font_attribute_images)
+		with open(os.path.join(temp.name,"out.json")) as f:
+			out = json.load(f)	
+		response = FontAttributesResponse.model_validate(out)
 	
 	else:
-		font_regions = font_attribute_images[0].font_regions
-		img = cv2.imread(os.path.join(image_path,[i for i in os.listdir(image_path) if i.endswith(".png") or i.endswith(".jpg") or i.endswith(".jpeg")][0]))
-
-		for font_region in font_regions:
-			bbox = font_region.bounding_box
-			coords = ((bbox.x,bbox.y),(bbox.x+bbox.w,bbox.y+bbox.h))
-			color = (0,0,255) if font_region.fontDecoration=="regular" else (0,255,0)
-			img = cv2.rectangle(img,coords[0],coords[1],color,3)
-			if model == ModelChoice.tesseract:
-				img = cv2.putText(
-					img,
-					str(font_region.fontSize),
-					(coords[0][0]-5, coords[0][1]-5),
-					cv2.FONT_HERSHEY_COMPLEX,
-					1,
-					color,
-					1,
-					cv2.LINE_AA
-				)
-		
-		visualize_result = os.path.join(image_path,"visualize.png")
-		cv2.imwrite(visualize_result,img)
-		return FileResponse(visualize_result)
-
-# @router.post('/visualize_font')
-# async def font_attribute_visualize(
-# 	images: UploadFile=File(...),
-# 	model: ModelChoice = Form(ModelChoice.doctr),
-# 	k_size: int = Form(default=4),
-# 	bold_threshold: float = Form(default=0.3)
-# 	):
-# 	"""
-# 	This endpoint returns the font attributes of text from images.
-# 	"""
-
-# 	image_path, image_folder = save_uploaded_image(images)
+		result_images = [os.path.join(temp.name,"result",i) for i in os.listdir(os.path.join(temp.name,"result"))]
+		img = cv2.imread(result_images[0])
+		res, im_png = cv2.imencode(".png", img)
+		response = Response(content=im_png.tobytes(),media_type="image/png")
 	
-# 	if model == ModelChoice.doctr:
-# 		font_attribute_images = process_image_font_attributes_doctr(image_folder,k_size=k_size,bold_threshold=bold_threshold)
-# 	elif model == ModelChoice.tesseract:
-# 		font_attribute_images = process_image_font_attributes_tesseract(image_folder,k_size=k_size,bold_threshold=bold_threshold)
-
-# 	font_regions = font_attribute_images[0].font_regions
-# 	img = cv2.imread(image_path)
-
-# 	for font_region in font_regions:
-# 		bbox = font_region.bounding_box
-# 		coords = ((bbox.x,bbox.y),(bbox.x+bbox.w,bbox.y+bbox.h))
-# 		color = (0,0,255) if font_region.fontDecoration=="regular" else (0,255,0)
-# 		img = cv2.rectangle(img,coords[0],coords[1],color,3)
-# 		if model == ModelChoice.tesseract:
-# 			img = cv2.putText(
-# 				img,
-# 				str(font_region.fontSize),
-# 				(coords[0][0]-5, coords[0][1]-5),
-# 				cv2.FONT_HERSHEY_COMPLEX,
-# 				1,
-# 				color,
-# 				1,
-# 				cv2.LINE_AA
-# 			)
-	
-# 	visualize_result = os.path.join(image_folder,"visualize.png")
-# 	cv2.imwrite(visualize_result,img)
-# 	return FileResponse(visualize_result)
+	temp.cleanup()
+	return response
