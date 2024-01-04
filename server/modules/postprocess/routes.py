@@ -92,7 +92,8 @@ def identify_script(si_request: PostprocessRequest, model: ModelChoice, venv_pat
 		call(f'./script_iden_v1.sh {tmp.name}', shell=True)
 		ret = process_layout_output(tmp.name)
 	elif(model==ModelChoice.alexnet):
-		call(f'./script_iden_iitb.sh {tmp.name} {si_venv_path} {venv_path}', shell=True)
+		# call(f"docker run --rm -v {tmp.name}:/model/data script-identification")
+		call(["docker", "run", "--rm", "-v", f"{tmp.name}:/model/data", "script-identification"])
 		ret = process_output(tmp.name)
 	return ret
 	
