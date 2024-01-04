@@ -1,7 +1,11 @@
+#custom
+layout-parser-venv/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+.vscode/
 
 # C extensions
 *.so
@@ -144,3 +148,8 @@ staticfiles
 
 # custom files and folders to exclude
 images
+
+# textron dependencies
+pickle_U.pkl
+layout-parser-venv/lib64
+server/modules/textron/textron_results/*

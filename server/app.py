@@ -4,10 +4,16 @@ from dateutil.tz import gettz
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+import os
+
+from .modules.core.config import *
 from .modules.cegis.routes import router as cegis_router
 from .modules.main.routes import router as main_router
+from .modules.table.routes import router as table_router
 from .modules.postprocess.routes import router as postprocess_router
-from .modules.preprocessv2.routes import router as preprocess_router
+from .modules.preprocess.routes import router as preprocess_router
+from .modules.layout_detection.routes import router as layout_detection_router
+from .modules.preprocessv2.routes import router as preprocess_router_v2
 
 app = FastAPI(
 	title='Layout Parser API',
@@ -30,7 +36,14 @@ app.add_middleware(
 	allow_credentials=True,
 )
 
+if not os.path.exists(IMAGE_FOLDER):
+	os.makedirs(IMAGE_FOLDER)
+
+
 app.include_router(preprocess_router)
+app.include_router(preprocess_router_v2)
 app.include_router(main_router)
 app.include_router(cegis_router)
 app.include_router(postprocess_router)
+app.include_router(layout_detection_router)
+app.include_router(table_router)
