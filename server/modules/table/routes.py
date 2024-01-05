@@ -1,15 +1,15 @@
 import os
-import uuid
+
 from typing import List
-
-import cv2
-from fastapi import APIRouter, Depends, File, Form, UploadFile
-from fastapi.responses import FileResponse
-
-from .dependencies import save_uploaded_images
-from .helper import (save_uploaded_image, process_multiple_image_fasterrcnn, process_image_fasterrcnn)
+import json
+import io
+from fastapi import APIRouter, Form, UploadFile
+from fastapi.responses import StreamingResponse
+from tempfile import TemporaryDirectory
+from subprocess import call
+from .helper import save_uploaded_images
 from .models import LayoutImageResponse, ModelChoice
-from ..core.config import IMAGE_FOLDER
+
 
 
 router = APIRouter(
@@ -17,23 +17,44 @@ router = APIRouter(
 	tags=['table'],
 )
 
-@router.post('/table', response_model=List[LayoutImageResponse])
+@router.post('/table', response_model=None)
 async def table_layout_parser(
-	folder_path: str = Depends(save_uploaded_images),
+	images: List[UploadFile],
 	model: ModelChoice = Form(ModelChoice.fasterrcnn),
 	dilate: bool = Form(False),
-):
+	):
 	"""
 	API endpoint for calling the layout parser
 	"""
-	print(model.value)
-	ret = process_multiple_image_fasterrcnn(folder_path)
-	return ret
+	temp = TemporaryDirectory()
+
+	image_path = save_uploaded_images(images,temp.name)
+	
+	print("Calling docker")
+	command = ["docker", "run", "--rm", "-v", f"{temp.name}:/model/data", "tabledockerize"]
+	call(command)
+	# call(f"docker run --rm -v {temp.name}:/model/data tabledockerize")
+	print("Done docker")
+
+	files_in_temp = os.listdir(temp.name)
+
+	# Print the list of files
+	print("Files in temporary directory:")
+	for file_name in files_in_temp:
+		print(file_name)
+	
+	with open(os.path.join(temp.name, "out.json")) as f:
+			out = json.load(f)	
+	response = LayoutImageResponse.model_validate(out)
+	print("response:", response)
+	
+	temp.cleanup()
+	return response
 
 
 @router.post('/visualize/table')
 async def layout_parser_swagger_only_demo_table(
-	image: UploadFile = File(...),
+	images: List[UploadFile],
 	model: ModelChoice = Form(ModelChoice.fasterrcnn),
 	dilate: bool = Form(False),
 ):
@@ -44,36 +65,22 @@ async def layout_parser_swagger_only_demo_table(
 
 	PS: This endpoint is not to be called from outside of swagger
 	"""
-	image_path = save_uploaded_image(image)
-	ret = process_image_fasterrcnn(image_path)
-	# Use os.path.join to create the complete save location
-	save_location = image_path
-	img = cv2.imread(image_path)
-	count = 1
+	temp = TemporaryDirectory()
 
+	image_path = save_uploaded_images(images,temp.name)
 
-	for region in ret.regions:
-		bounding_box = region.bounding_box
-		cellrows = region.cellrows
+	print("Calling docker")
+	command = ["docker", "run", "--rm", "-v", f"{temp.name}:/model/data", "tabledockerize"]
+	call(command)
+	print("Done docker")
 
-		# Draw bounding box
-		img = cv2.rectangle(img, (bounding_box.x, bounding_box.y), (bounding_box.x + bounding_box.w, bounding_box.y + bounding_box.h), (0, 0, 255), 3)
-		img = cv2.putText(
-			img,
-			str(count),
-			(bounding_box.x - 5, bounding_box.y - 5),
-			cv2.FONT_HERSHEY_COMPLEX,
-			1,
-			(0, 0, 255),
-			1,
-			cv2.LINE_AA)
-		count += 1
+	files_in_temp = os.listdir(temp.name)
 
-		if cellrows:
-			for row, row_bboxes in cellrows.items():
-				for cell_bbox in row_bboxes:
-					# Draw cell bounding boxes (if available)
-					img = cv2.rectangle(img, (cell_bbox.x, cell_bbox.y), (cell_bbox.x + cell_bbox.w, cell_bbox.y + cell_bbox.h), (0, 255, 0), 1)
+	# Print the list of files
+	print("Files in temporary directory:")
+	for file_name in files_in_temp:
+		print(file_name)
+	image_path_with_boxes = os.path.join(temp.name, "boxes.jpg")
 
-	cv2.imwrite(save_location, img)
-	return FileResponse(save_location)
+	with open(image_path_with_boxes, mode="rb") as img_file:
+		return StreamingResponse(io.BytesIO(img_file.read()), media_type="image/jpeg")
