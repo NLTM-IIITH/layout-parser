@@ -41,7 +41,7 @@ async def doctr_layout_parser(
 	elif model == ModelChoice.v2_doctr:
 		ret = process_multiple_image_doctr_v2(folder_path)
 	elif model == ModelChoice.textron:
-		ret = process_images_textron(folder_path)
+		ret = process_textron_output(folder_path)
 	if dilate:
 		ret = process_multiple_dilate(ret)
 	return ret
@@ -66,18 +66,13 @@ async def layout_parser_swagger_only_demo(
 	elif model == ModelChoice.worddetector:
 		regions = process_image_worddetector(image_path)
 	elif model == ModelChoice.textron:
-		img_name=image_path.split('/')[-1].split('.')[0]
-		a=textron_visulaize(image_path)
-		save_location = PRED_IMAGES_FOLDER+'/{}_pred.jpg'.format(
-			img_name
-		)
-		return FileResponse(save_location)
+		regions = textron_visualize(image_path)
 	else:
 		regions = process_image(image_path, model.value)
 	if dilate:
 		regions = process_dilate(regions, image_path)
-	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
-		str(uuid.uuid4())
+	save_location = '{}/{}.jpg'.format(
+		IMAGE_FOLDER,str(uuid.uuid4())
 	)
 	# TODO: all the lines after this can be transfered to the helper.py file
 	bboxes = [i.bounding_box for i in regions]
