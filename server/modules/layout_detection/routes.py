@@ -1,11 +1,17 @@
 # routes.py
+import pickle
+from typing import List
 import json
 import os
+import shutil
 import subprocess
 import numpy as np
 from requests import request
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
+from tempfile import TemporaryDirectory
+
+from server.modules.layout_detection.helpers import save_uploaded_images
 #from server.modules.layout_detection.helpers import get_layout_from_single_image
 
 router = APIRouter(
@@ -14,7 +20,30 @@ router = APIRouter(
 )
 
 @router.post("/")
-async def detect_layout(file: UploadFile):
+async def detect_layout(images: List[UploadFile]):
+    temp = TemporaryDirectory()
+    image_path = save_uploaded_images(images,temp.name)
+
+    config = {
+        "task" : "layout detection"
+    }
+
+    with open(os.path.join(image_path,"config"),"wb") as f:
+        pickle.dump(config,f)
+    
+    subprocess.call(f"docker run --rm -v {temp.name}:/model/data oms_v2")
+
+    with open(os.path.join(temp.name,"out.json")) as f:
+        out = json.load(f)	
+    response = out
+    return JSONResponse(content={"message": "Layout Detection Successful", "layout": response})
+    
+    
+    
+    
+    
+    
+    '''
     try:
         with open(file.filename, "wb") as f:
             f.write(file.file.read())
@@ -22,9 +51,9 @@ async def detect_layout(file: UploadFile):
         # Run the Docker container
         docker_command = [
             "docker", "run",
-            "-v", f"{os.path.abspath('.')}/results:/app/results", 
+            "-v", f"{os.path.abspath('.')}/app/results", 
             "-v", f"{os.path.abspath('.')}/{file.filename}:/app/{file.filename}",  
-            "layout_detection_final",
+            "oms",
             "python", "inference.py",
             file.filename  
         ]
@@ -41,3 +70,4 @@ async def detect_layout(file: UploadFile):
         return JSONResponse(content={"message": "Layout Detection Failed", "error": str(e)}, status_code=500)
     except Exception as e:
         return JSONResponse(content={"message": "Layout Detection Failed", "error": str(e)}, status_code=500)
+    '''

@@ -1,8 +1,13 @@
+import os
+import shutil
 import cv2
 from server.modules.layout_detection.classes.equations import get_equation_detection
 from server.modules.layout_detection.classes.figures import get_figure_detection
 from server.modules.layout_detection.classes.tables import get_tables_cells_detection
 from server.modules.layout_detection.classes.utilities import mask_image
+from typing import List, Tuple
+from os.path import join
+from fastapi import UploadFile
 
 def get_layout_from_single_image(image_name):
     layout = {}
@@ -30,3 +35,25 @@ def get_layout_from_single_image(image_name):
 
 
     return layout
+
+
+def delete_files_in_directory(directory_path):
+   try:
+     files = os.listdir(directory_path)
+     for file in files:
+       file_path = os.path.join(directory_path, file)
+       if os.path.isfile(file_path):
+         os.remove(file_path)
+     print("All files deleted successfully.")
+   except OSError:
+     print("Error occurred while deleting files.")
+
+def save_uploaded_images(images: List[UploadFile],image_dir) -> str:
+	print('removing all the previous uploaded files from the image folder')
+	delete_files_in_directory(image_dir)
+	print(f'Saving {len(images)} to location: {image_dir}')
+	for image in images:
+		location = join(image_dir, f'{image.filename}')
+		with open(location, 'wb') as f:
+			shutil.copyfileobj(image.file, f)
+	return image_dir
