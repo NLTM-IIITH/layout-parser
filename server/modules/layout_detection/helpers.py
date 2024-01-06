@@ -20,12 +20,13 @@ def get_layout_from_single_image(image_name):
     layout["cells"] = cell_bboxes
     layout['equations'] = equation_bboxes
     layout["figures"] = figure_bboxes
-    layout["masked-image"] = masked_image
+    #layout["masked-image"] = masked_image.tolist()
 
     #converting the numpy arrays to python lists
     layout["tables"] = [table.tolist() for table in layout["tables"]]
     layout["cells"] = [cell.tolist() for cell in layout["cells"]]
-    layout['equations'] = [equation.tolist() for equation in layout["equations"]]
-    layout["figures"] = [figure.tolist() for figure in layout["figures"]]
+    layout["equations"] = [equation.tolist() if not isinstance(equation, list) else equation for equation in layout["equations"]]
+    layout["figures"] = [figure.tolist() if not isinstance(figure, list) else figure for figure in layout["figures"]]
+
 
     return layout
