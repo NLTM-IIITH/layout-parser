@@ -1,7 +1,0 @@
-pip install "layoutparser[paddledetection]"
-pip install layoutparser torchvision 
-pip install "git+https://github.com/facebookresearch/detectron2.git@v0.5#egg=detectron2"
-pip install "layoutparser[ocr]"
-pip install python-doctr[torch]
-sudo apt install tesseract-ocr
-sudo apt-get install poppler-utils
