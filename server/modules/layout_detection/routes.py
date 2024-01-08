@@ -1,18 +1,13 @@
 # routes.py
-import pickle
 from typing import List
 import json
 import os
-import shutil
 import subprocess
-import numpy as np
-from requests import request
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, UploadFile
 from fastapi.responses import JSONResponse
 from tempfile import TemporaryDirectory
 
 from server.modules.layout_detection.helpers import save_uploaded_images
-#from server.modules.layout_detection.helpers import get_layout_from_single_image
 
 router = APIRouter(
 	prefix='/layout/detect-layouts',
@@ -24,21 +19,15 @@ async def detect_layout(images: List[UploadFile]):
     temp = TemporaryDirectory()
     image_path = save_uploaded_images(images,temp.name)
 
-    config = {
-        "task" : "layout detection"
-    }
-
-    with open(os.path.join(image_path,"config"),"wb") as f:
-        pickle.dump(config,f)
+    print(os.listdir(temp.name))
     
-    subprocess.call(f"docker run --rm -v {temp.name}:/model/data oms_v2")
+    subprocess.call(f"docker run --rm -v {temp.name}:/model/data page-layout")
 
     with open(os.path.join(temp.name,"out.json")) as f:
-        out = json.load(f)	
+        out = json.load(f)
     response = out
+
     return JSONResponse(content={"message": "Layout Detection Successful", "layout": response})
-    
-    
     
     
     
