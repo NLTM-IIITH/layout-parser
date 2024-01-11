@@ -32,25 +32,3 @@ def save_uploaded_images(images: List[UploadFile],image_dir) -> str:
 		with open(location, 'wb') as f:
 			shutil.copyfileobj(image.file, f)
 	return image_dir
-
-def convert_geometry_to_bbox(
-	geometry: Tuple[Tuple[float, float], Tuple[float, float]],
-	dim: Tuple[int, int],
-	padding: int = 0
-) -> BoundingBox:
-	"""
-	converts the geometry that is fetched from the doctr models
-	to the standard bounding box model
-	format of the geometry is ((Xmin, Ymin), (Xmax, Ymax))
-	format of the dim is (height, width)
-	"""
-	x1 = int(geometry[0][0] * dim[1])
-	y1 = int(geometry[0][1] * dim[0])
-	x2 = int(geometry[1][0] * dim[1])
-	y2 = int(geometry[1][1] * dim[0])
-	return BoundingBox(
-		x=x1 - padding,
-		y=y1 - padding,
-		w=x2-x1 + padding,
-		h=y2-y1 + padding,
-	)
