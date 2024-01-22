@@ -48,6 +48,44 @@ def identify_handwritten_language(si_request: PostprocessRequest) -> list[SIResp
 	return process_layout_output(tmp.name)
 
 @router.post(
+	'/language/pola/en_hi',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_2class_hindi_english_language(si_request: PostprocessRequest) -> list[SIResponse]:
+	"""
+	This is the endpoint for 2 class classification of the printed word images.
+	this model works for all the 2 languages (hindi & english)
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
+	"""
+	print('calling')
+	tmp = TemporaryDirectory(prefix='language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_2class_enhi.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
+	'/language/pola/en_pa',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_2class_hindi_english_language(si_request: PostprocessRequest) -> list[SIResponse]:
+	"""
+	This is the endpoint for 2 class classification of the printed word images.
+	this model works for all the 2 languages (punjabi & english)
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
+	"""
+	print('calling')
+	tmp = TemporaryDirectory(prefix='language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_2class_enpa.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
 	'/language/pola/{language}',
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,
