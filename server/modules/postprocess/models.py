@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 # SI stands for Script Identification
@@ -10,6 +12,7 @@ class PostprocessRequest(BaseModel):
 
 class ClassifyResponse(BaseModel):
 	text: str
+	meta: Optional[dict] = {}
 
 
 class SIResponse(BaseModel):
@@ -34,6 +37,7 @@ class SIResponse(BaseModel):
 			'"urdu", '
 		)
 	)
+	meta: Optional[dict] = {}
 
 
 # MI stands for Modality Identification

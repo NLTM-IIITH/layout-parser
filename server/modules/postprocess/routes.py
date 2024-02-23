@@ -105,6 +105,25 @@ def identify_2class_hindi_punjabi_language(si_request: PostprocessRequest) -> li
 	return process_layout_output(tmp.name)
 
 @router.post(
+	'/language/pola/en_hi_pa',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_3class_english_hindi_punjabi_language(si_request: PostprocessRequest) -> list[SIResponse]:
+	"""
+	This is the endpoint for 3 class classification of the printed word images.
+	this model works for all the 3 languages (english & punjabi & hindi)
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
+	"""
+	print('calling')
+	tmp = TemporaryDirectory(prefix='language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_3class_enhipa.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
 	'/language/pola/{language}',
 	response_model=list[SIResponse],
 	response_model_exclude_none=True,

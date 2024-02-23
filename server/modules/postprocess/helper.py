@@ -46,6 +46,15 @@ def process_layout_output(
 		a = json.loads(a)
 		a = list(a.items())
 		a = sorted(a, key=lambda x:int(x[0].split('.')[0]))
+		meta_path = join(path, 'meta.json')
+		if os.path.exists(meta_path):
+			print('meta file found')
+			b = open(meta_path, 'r', encoding='utf-8').read().strip()
+			b = json.loads(b)
+			b = list(b.items())
+			b = sorted(b, key=lambda x:int(x[0].split('.')[0]))
+			return [ClassifyResponse(text=i[0][1], meta=i[1][1]) for i in zip(a,b)]
+
 		return [ClassifyResponse(text=i[1]) for i in a]
 	except Exception as e:
 		print(e)
