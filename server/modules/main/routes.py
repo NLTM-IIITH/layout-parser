@@ -11,12 +11,13 @@ from .dependencies import save_uploaded_images
 from .helper import (Reading_Order_Generator, cropPadFix, process_image,
                      process_image_craft, process_image_urdu_v1,
                      process_image_worddetector, process_multiple_image_craft,
+                     process_multiple_image_cropPadFix,
                      process_multiple_image_doctr,
                      process_multiple_image_doctr_v2,
                      process_multiple_image_worddetector,
                      process_multiple_pages_ReadingOrderGenerator,
                      process_multiple_tesseract, process_multiple_urdu_v1,
-                     save_uploaded_image, process_multiple_image_cropPadFix)
+                     save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
 from .post_helper import process_dilate, process_multiple_dilate
 from .readingOrder import *
@@ -55,6 +56,8 @@ async def doctr_layout_parser(
 	elif model == ModelChoice.v1_urdu:
 		ret = process_multiple_urdu_v1(folder_path)
 	elif model == ModelChoice.tesseract:
+		ret = process_multiple_tesseract(folder_path, language)
+	elif model == ModelChoice.openseg_v1:
 		ret = process_multiple_tesseract(folder_path, language)
 	elif model ==ModelChoice.v1_textAttb:
 		# order is working
