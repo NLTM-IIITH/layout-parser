@@ -186,7 +186,7 @@ def identify_script(si_request: PostprocessRequest) -> list[SIResponse]:
 
 
 @router.post(
-	'/modality',
+	'/modality/v0',
 	response_model=list[MIResponse],
 	response_model_exclude_none=True,
 )
@@ -201,5 +201,43 @@ def identify_modality(si_request: PostprocessRequest) -> list[MIResponse]:
 	"""
 	tmp = TemporaryDirectory(prefix='modality_classify')
 	process_images(si_request.images, tmp.name)
+	call(f'./modality_iden_v0.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
+	'/modality/v1',
+	response_model=list[MIResponse],
+	response_model_exclude_none=True,
+)
+def detect_modality_apoorva_v1(si_request: PostprocessRequest) -> list[MIResponse]:
+	"""
+	This is the endpoint for classifying the modality of the images.
+	this model works for all the 14 language (13 Indian + english) and
+	outputs among 3 classes ["**printed**", "**handwritten**", "**scenetext**"]
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **modality** as value
+	"""
+	tmp = TemporaryDirectory(prefix='modality_classify')
+	process_images(si_request.images, tmp.name)
 	call(f'./modality_iden_v1.sh {tmp.name}', shell=True)
+	return process_layout_output(tmp.name)
+
+@router.post(
+	'/modality/v2',
+	response_model=list[MIResponse],
+	response_model_exclude_none=True,
+)
+def detect_modality_apoorva_v2(si_request: PostprocessRequest) -> list[MIResponse]:
+	"""
+	This is the endpoint for classifying the modality of the images.
+	this model works for all the 14 language (13 Indian + english) and
+	outputs among 3 classes ["**printed**", "**handwritten**", "**scenetext**"]
+
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **modality** as value
+	"""
+	tmp = TemporaryDirectory(prefix='modality_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./modality_iden_v2.sh {tmp.name}', shell=True)
 	return process_layout_output(tmp.name)
