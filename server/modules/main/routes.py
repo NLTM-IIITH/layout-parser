@@ -20,7 +20,7 @@ from .helper import (Reading_Order_Generator, cropPadFix, process_ganga_layout,
                      process_multiple_tesseract, process_multiple_urdu_v1,
                      save_uploaded_image)
 from .models import LayoutImageResponse, ModelChoice
-from .post_helper import process_dilate, process_multiple_dilate
+from .post_helper import add_padding, process_dilate, process_multiple_dilate
 from .readingOrder import *
 from .textualAttribute import *
 
@@ -32,43 +32,46 @@ router = APIRouter(
 
 @router.post('/', response_model=List[LayoutImageResponse])
 async def doctr_layout_parser(
-	folder_path: str = Depends(save_uploaded_images),
-	model: ModelChoice = Form(ModelChoice.doctr),
-	language: str = Form('english'),
-	dilate: bool = Form(False),
-	left_right_percentages: int = Form(0),
-	header_percentage: int = Form(0),
-	footer_percentage: int = Form(0)	
+    folder_path: str = Depends(save_uploaded_images),
+    model: ModelChoice = Form(ModelChoice.doctr),
+    language: str = Form('english'),
+    padding: int = Form(0),
+    dilate: bool = Form(False),
+    left_right_percentages: int = Form(0),
+    header_percentage: int = Form(0),
+    footer_percentage: int = Form(0)	
 ):
-	"""
-	API endpoint for calling the layout parser
-	"""
-	print(model.value)
-	if model == ModelChoice.craft:
-		ret = process_multiple_image_craft(folder_path)
-	elif model == ModelChoice.worddetector:
-		ret = process_multiple_image_worddetector(folder_path)
-	elif model == ModelChoice.doctr:
-		ret = process_multiple_image_doctr(folder_path)
-	elif model == ModelChoice.v2_doctr:
-		ret = process_multiple_image_doctr_v2(folder_path)
-	elif model == ModelChoice.v2_docTR_readingOrder:
-		ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
-	elif model == ModelChoice.v1_urdu:
-		ret = process_multiple_urdu_v1(folder_path)
-	elif model == ModelChoice.tesseract:
-		ret = process_multiple_tesseract(folder_path, language)
-	elif model == ModelChoice.openseg_v1:
-		ret = process_multiple_tesseract(folder_path, language)
-	elif model ==ModelChoice.v1_textAttb:
-		# order is working
-		tmp = TemporaryDirectory(prefix="misc")
-		ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
-	elif model == ModelChoice.cropPadFix:
-		ret = process_multiple_image_cropPadFix(folder_path)
-	if dilate:
-		ret = process_multiple_dilate(ret)
-	return ret
+    """
+    API endpoint for calling the layout parser
+    """
+    print(model.value)
+    if model == ModelChoice.craft:
+        ret = process_multiple_image_craft(folder_path)
+    elif model == ModelChoice.worddetector:
+        ret = process_multiple_image_worddetector(folder_path)
+    elif model == ModelChoice.doctr:
+        ret = process_multiple_image_doctr(folder_path)
+    elif model == ModelChoice.v2_doctr:
+        ret = process_multiple_image_doctr_v2(folder_path)
+    elif model == ModelChoice.v2_docTR_readingOrder:
+        ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
+    elif model == ModelChoice.v1_urdu:
+        ret = process_multiple_urdu_v1(folder_path)
+    elif model == ModelChoice.tesseract:
+        ret = process_multiple_tesseract(folder_path, language)
+    elif model == ModelChoice.openseg_v1:
+        ret = process_multiple_tesseract(folder_path, language)
+    elif model ==ModelChoice.v1_textAttb:
+        # order is working
+        tmp = TemporaryDirectory(prefix="misc")
+        ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
+    elif model == ModelChoice.cropPadFix:
+        ret = process_multiple_image_cropPadFix(folder_path)
+    if dilate:
+        ret = process_multiple_dilate(ret)
+    if padding:
+        ret = add_padding(ret, padding)
+    return ret
 
 
 @router.post('/visualize')
