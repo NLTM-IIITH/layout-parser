@@ -37,6 +37,7 @@ async def doctr_layout_parser(
 	left_right_percentages: int = Form(0),
 	header_percentage: int = Form(0),
 	footer_percentage: int = Form(0)	
+	#TODO: option to add True/False selection for using yolo for layout detection
 ):
 	"""
 	API endpoint for calling the layout parser
@@ -95,9 +96,11 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image(image_path, model.value)
 	if dilate:
 		regions = process_dilate(regions, image_path)
-	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
-		str(uuid.uuid4())
-	)
+	# save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
+	# 	str(uuid.uuid4())
+	# )
+	os.makedirs('/data3/sreevatsa/layout-parser/saved_images', exist_ok = True)
+	save_location = '/data3/sreevatsa/layout-parser/saved_images/{}.jpg'.format(str(uuid.uuid4()))
 	# TODO: all the lines after this can be transfered to the helper.py file
 	bboxes = [i.bounding_box for i in regions]
 	bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
@@ -142,7 +145,8 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 		description='Footer margin in percent of the total page height from bottom'
 	),
 	para_only: bool = False,
-	col_only:bool = False
+	col_only:bool = False,
+	use_yolo: bool = True
 ):
 	"""
 	This endpoint is only used to demonstration purposes.
@@ -152,7 +156,7 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	PS: This endpoint is not to be called from outside of swagger
 	"""
 	image_path = save_uploaded_image(image)
-	save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
+	save_location = '/data3/sreevatsa/layout-parser/saved_images/{}.jpg'.format(str(uuid.uuid4()))
 	if para_only is True and col_only is False:
 		img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only,col_only)
 		cv2.imwrite(save_location, img)
@@ -164,7 +168,7 @@ async def layout_parser_swagger_only_demo_Reading_Order(
 	elif para_only is True and col_only is True:
 		pass
 	elif para_only is False and col_only is False:
-		img,_ = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only,col_only)
+		img,_ = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only,col_only, use_yolo)
 		cv2.imwrite(save_location,img)
 		return FileResponse(save_location)
 

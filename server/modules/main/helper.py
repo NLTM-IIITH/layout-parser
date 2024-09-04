@@ -32,7 +32,18 @@ from ..core.config import IMAGE_FOLDER, TESS_LANG
 # from .croppadfix import *
 # from .croppadfix import save_cropped, visualized_rescaled_bboxes_from_cropped
 from .models import *
-from .readingOrder import *
+# from .readingOrder import *
+
+from .routils.dist_utils import *
+from .routils.doctr_utils import *
+from .routils.neighbor_utils import *
+from .routils.generate_graph_utils import *
+from .routils.paragraph import *
+from .routils.para_utils import *
+from .routils.column_utils import *
+from .routils.word_order_utils import *
+from .routils.plot_utils import *
+from .routils.new_read_order import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
@@ -41,11 +52,14 @@ def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
 
 t = time.time()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+
+# model_path = '/home/layout/models/v2_doctr/model.pt'
+model_path = '/data3/sreevatsa/models/db_resnet50.pt'
 
 PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
-if os.path.exists('/home/layout/models/v2_doctr/model.pt'):
-	state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
+if os.path.exists(model_path):
+	state_dict = torch.load(model_path)
 	
 	new_state_dict = OrderedDict()
 	for k, v in state_dict.items():
@@ -645,20 +659,36 @@ def doctr_predictions(directory):
 	
 	return abs_coords
 
-def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,col_only):
+def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,col_only, use_yolo):
+	
+	print(width_p, header_p, footer_p)
 
+	output_folder_path = '/data3/sreevatsa/layout-parser/saved_images'
+	yolo_file_path = '/data3/sreevatsa/models/yolo_1024_best.pt'
 	pred = doctr_predictions(image_file)
+	print('Got predictions from docTR')
+	
+	if use_yolo is True:
+		layout_json_img = get_layout_from_yolo(image_file, yolo_file_path)
+		layout_json_path = layout_json_img
+		print('Got inference from yolo')
+	else:
+		layout_json_path = None
+		print('No yolo inference')
+	
 	df = pd.DataFrame(pred)
 	df = df.T
 	# df = pd.read_json(doctr_file) #commented - to avoid saving doctr output as json
 	# df = df.T #commented - to avoid saving doctr output as json
 	euclidean = pd.DataFrame()
-	kde = pd.DataFrame()
-	calculate_center_points(df, kde)
-	horizontal_neighbors, vertical_neighbors = find_closest_neighbors(kde)
-	x = kde_estimate(horizontal_neighbors)
-	y = kde_estimate(vertical_neighbors)
-	calculate_center_points(df,euclidean)
+	# kde = pd.DataFrame()
+	calculate_center_points(df, euclidean)
+	horizontal_neighbors, vertical_neighbors = find_closest_neighbors(euclidean)
+	print('Running kde estimate')
+	x = kde_estimate_d(horizontal_neighbors, 'horizontal')
+	y = kde_estimate_d(vertical_neighbors, 'vertical')
+	print('Got KDE estimates')
+	# calculate_center_points(df,euclidean)
 	calculate_rightbox(euclidean,x)
 	calculate_leftbox(euclidean,x)
 	calculate_topbox(euclidean,y)
@@ -675,11 +705,18 @@ def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,c
 	target_components = d1.values.tolist()
 	# print(target_components)
 	image = cv2.imread(image_file)
-	component = recognise_paragraphs(image, target_components, euclidean, image_file, width_p, header_p, footer_p)
+	component_before_pinp, component_after_pinp_not_ordered, component_after_pinp_not_ordered_after_layout = recognise_paragraphs(image, target_components, euclidean, image_file, width_p, header_p, footer_p, layout_json_path)
+	
+	if layout_json_path is None:
+		component = component_after_pinp_not_ordered
+	elif layout_json_path is not None:
+		component = component_after_pinp_not_ordered_after_layout
+	
 	# print(component)
 	min_idx =  minimum_euclidean(component)
 	# print(min_idx)
-	component = paragraph_order(component)
+	# component = paragraph_order(component)
+	component = get_paragraph_order(component, image_file, output_folder_path)
 
 	if para_only is True and col_only is False:
 		img = visualise_paragraph_order(image, target_components, euclidean,component)
@@ -689,35 +726,47 @@ def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,c
 		return img
 	elif para_only is True and col_only is True:
 		pass
-	elif para_only is False and col_only is False:	
+	# elif para_only is False and col_only is False:	
+	# 	new = pd.DataFrame()
+	# 	sort_order = component.sort_values('Order').index
+	# 	new = component.loc[sort_order]
+	# 	new = new.reset_index(drop=True)
+	# 	new_euclidean = pd.DataFrame()
+	# 	euclidean = word_order(new, euclidean)
+	# 	sort_order = euclidean.sort_values('Order').index
+	# 	new_euclidean = euclidean.loc[sort_order]
+	# 	# print(new_euclidean)
+	# 	new_euclidean = new_euclidean.reset_index(drop=True)
+	# 	# print(new_euclidean)
+	# 	image = cv2.imread(image_file)
+	# 	image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file, header_p, footer_p)
+	# 	# output_path = 'Output.png'
+	# 	# cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
+	# 	# euclidean.to_csv('Euclidean.csv')
+	# 	# print(sort_order)
+	# 	# print(reading_order_json)
+	# 	return image_with_boxes, reading_order_json
+	# 	# print(new_euclidean)
+	elif para_only is False and col_only is False:
+
 		new = pd.DataFrame()
 		sort_order = component.sort_values('Order').index
 		new = component.loc[sort_order]
 		new = new.reset_index(drop=True)
-		new_euclidean = pd.DataFrame()
-		euclidean = word_order(new, euclidean)
-		sort_order = euclidean.sort_values('Order').index
-		new_euclidean = euclidean.loc[sort_order]
-		# print(new_euclidean)
-		new_euclidean = new_euclidean.reset_index(drop=True)
-		# print(new_euclidean)
-		image = cv2.imread(image_file)
-		image_with_boxes, reading_order_json = reading_order(image,new_euclidean, image_file, header_p, footer_p)
-		# output_path = 'Output.png'
-		# cv2.imwrite(output_path, cv2.cvtColor(image_with_boxes, cv2.COLOR_RGB2BGR))
-		# euclidean.to_csv('Euclidean.csv')
-		# print(sort_order)
-		# print(reading_order_json)
+		
+		# final_word_order = get_coordinates_from_component(new,euclidean,image_file, output_folder_path)
+		image_with_boxes, reading_order_json = get_final_word_order(new,euclidean,image_file, output_folder_path, save_csv = False)
+		print('Done')
 		return image_with_boxes, reading_order_json
-		# print(new_euclidean)
 
 def process_multiple_pages_ReadingOrderGenerator(folder_path: str, left_right_percentages: int, header_percentage: int, footer_percentage: int) -> List[LayoutImageResponse]:
 	files = [join(folder_path, i) for i in os.listdir(folder_path)]
 	ret = []
 	para_only = False #para_only = True when visualizing para boxes, here we get only the reading_order json, so para_only not required
 	col_only = False
+	use_yolo = True
 	for idx in range(len(files)):
-		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage, para_only,col_only)
+		reading_order_image, reading_order = Reading_Order_Generator(files[idx], left_right_percentages, header_percentage, footer_percentage, para_only,col_only, use_yolo)
 		ret.append(LayoutImageResponse(regions=reading_order.copy(),image_name=basename(files[idx])))
 
 	logtime(t, 'Time taken to generate Reading Order')
