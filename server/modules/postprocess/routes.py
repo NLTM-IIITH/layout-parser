@@ -117,7 +117,6 @@ def identify_3class_english_hindi_punjabi_language(si_request: PostprocessReques
 	API inputs a list of images in base64 encoded string and outputs a list
 	of objects containing **"text"** as key and **language** as value
 	"""
-	print('calling')
 	tmp = TemporaryDirectory(prefix='language_classify')
 	process_images(si_request.images, tmp.name)
 	call(f'./lang_iden_3class_enhipa.sh {tmp.name}', shell=True)

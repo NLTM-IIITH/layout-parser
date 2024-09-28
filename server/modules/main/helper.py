@@ -1,4 +1,5 @@
 import datetime
+import multiprocessing
 import os
 import shutil
 import time
@@ -24,11 +25,13 @@ import pytesseract
 import torch
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
+
 # from torchvision.transforms import Normalize
 from fastapi import UploadFile
 from skimage.filters import threshold_otsu, threshold_sauvola
 
 from ..core.config import IMAGE_FOLDER, TESS_LANG
+
 # from .croppadfix import *
 # from .croppadfix import save_cropped, visualized_rescaled_bboxes_from_cropped
 from .models import *
@@ -43,6 +46,8 @@ def logtime(t: float, msg:  str) -> None:
 t = time.time()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# PREDICTOR_V2 = None
+
 PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
 if os.path.exists('/home/layout/models/v2_doctr/model.pt'):
     state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
@@ -52,7 +57,7 @@ if os.path.exists('/home/layout/models/v2_doctr/model.pt'):
         name = k[7:] # remove `module.`
         new_state_dict[name] = v
     PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
-logtime(t, 'Time taken to load the doctr model')
+logtime(t, 'Time taken to load the v2_doctr model')
 
 
 def save_uploaded_image(image: UploadFile) -> str:
@@ -313,6 +318,16 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
     doc = DocumentFile.from_images(files)
     logtime(t, 'Time taken to load all the images')
 
+    PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
+    if os.path.exists('/home/layout/models/v2_doctr/model.pt'):
+        state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
+
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            name = k[7:] # remove `module.`
+            new_state_dict[name] = v
+        PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
+
     t = time.time()
     a = PREDICTOR_V2(doc)
     logtime(t, 'Time taken to perform doctr inference')
@@ -387,6 +402,49 @@ def find_peaks_valley(hpp):
         prev_i = i
     return line_index		
 
+def process_single_tesseract(image_info):
+    image_path, language = image_info
+    print(f'Processing tesseract for file: {basename(image_path)}')
+    lang = TESS_LANG.get(language, 'eng')
+    if lang == 'hin':
+        lang = 'pan+hin+eng'
+    elif lang in ('tel', 'tal'):
+        lang = 'tel+tal'
+    elif lang in ('guj', 'ori', 'mal', 'kan'):
+        lang = f'{lang}+tel+tal'
+    elif lang == 'eng':
+        lang = 'eng'
+    else:
+        lang = f'{lang}+hin'
+    results = pytesseract.image_to_data(image_path, output_type=pytesseract.Output.DICT, lang=lang)
+
+    regions = []
+    line = 1
+    for i in range(0, len(results['text'])):
+        if int(results['conf'][i]) <= 0:
+            # Skipping the region as confidence is too low
+            continue
+        x = results['left'][i]
+        y = results['top'][i]
+        w = results['width'][i]
+        h = results['height'][i]
+        if h < 10 or w < 3:
+            continue
+        regions.append(Region(
+            bounding_box=BoundingBox(
+                x=x,
+                y=y,
+                w=w,
+                h=h
+            ),
+            line=results['line_num'][i] + 1,
+        ))
+        line += 1
+    return LayoutImageResponse(
+        image_name=basename(image_path),
+        regions=regions.copy()
+    )
+
 def process_multiple_tesseract(folder_path: str, language: str) -> List[LayoutImageResponse]:
     """
     given the path of the image, this function returns a list
@@ -395,42 +453,10 @@ def process_multiple_tesseract(folder_path: str, language: str) -> List[LayoutIm
     @returns list of BoundingBox class
     """
     ret = []
-    for filename in os.listdir(folder_path):
-        image_path = join(folder_path, filename)
-        image = cv2.imread(image_path)
-        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        lang = TESS_LANG.get(language, 'eng')
-        print(lang)
-        results = pytesseract.image_to_data(rgb, output_type=pytesseract.Output.DICT, lang=lang)
-        print(results)
-
-        regions = []
-        line = 1
-        for i in range(0, len(results['text'])):
-            if int(results['conf'][i]) <= 0:
-                # Skipping the region as confidence is too low
-                continue
-            x = results['left'][i]
-            y = results['top'][i]
-            w = results['width'][i]
-            h = results['height'][i]
-            if h < 10:
-                print(f'Skipping a region with ({x}, {y}, {w}, {h})')
-                continue
-            regions.append(Region(
-                bounding_box=BoundingBox(
-                    x=x,
-                    y=y,
-                    w=w,
-                    h=h
-                ),
-                line=results['line_num'][i] + 1,
-            ))
-            line += 1
-        ret.append(LayoutImageResponse(
-            image_name=basename(image_path),
-            regions=regions.copy()
-        ))
+    image_paths = [join(folder_path, i) for i in os.listdir(folder_path)]
+    image_infos = [(i, language) for i in image_paths]
+    with multiprocessing.Pool(processes=5) as pool:
+        ret = pool.map(process_single_tesseract, image_infos)
     return ret
 
 def process_multiple_urdu_v1(folder_path: str) -> List[LayoutImageResponse]:

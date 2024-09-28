@@ -2,6 +2,7 @@ import base64
 import json
 import os
 from os.path import join
+from pprint import pprint
 
 from fastapi import HTTPException
 
@@ -16,6 +17,7 @@ def process_images(images: list[str], path: str='/home/layout/layout-parser/imag
 	"""
 	print('deleting all the previous data from the images folder')
 	os.system(f'rm -rf {path}/*')
+	print(f'Saving {len(images)} images to the folder.')
 	for idx, image in enumerate(images):
 		if image is not None:
 			try:
@@ -53,6 +55,7 @@ def process_layout_output(
 			b = json.loads(b)
 			b = list(b.items())
 			b = sorted(b, key=lambda x:int(x[0].split('.')[0]))
+			pprint(list(zip(a, b))[:3])
 			return [ClassifyResponse(text=i[0][1], meta=i[1][1]) for i in zip(a,b)]
 
 		return [ClassifyResponse(text=i[1]) for i in a]
