@@ -23,6 +23,7 @@ from .models import LayoutImageResponse, ModelChoice
 from .post_helper import add_padding, process_dilate, process_multiple_dilate
 from .readingOrder import *
 from .textualAttribute import *
+from .yolo_helper import do_yolo_infer
 
 router = APIRouter(
     prefix='/layout',
@@ -67,6 +68,8 @@ async def doctr_layout_parser(
         ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
     elif model == ModelChoice.cropPadFix:
         ret = process_multiple_image_cropPadFix(folder_path)
+    elif model == ModelChoice.yolo:
+        ret = do_yolo_infer(folder_path)
     if dilate:
         ret = process_multiple_dilate(ret)
     if padding:
@@ -98,6 +101,9 @@ async def layout_parser_swagger_only_demo(
     elif model == ModelChoice.tesseract:
         folder_path = os.path.dirname(image_path)
         regions = process_multiple_tesseract(folder_path, language)[0].regions
+    elif model == ModelChoice.yolo:
+        folder_path = os.path.dirname(image_path)
+        regions = do_yolo_infer(folder_path)[0].regions
     else:
         regions = process_image(image_path, model.value)
     if dilate:
