@@ -15,7 +15,9 @@ class ModelChoice(str, Enum):
 	tesseract = 'tesseract'
 	openseg_v1 = 'openseg_v1'
 	cropPadFix = 'cropPadFix'
-	yolo = 'yolo'
+	yolov1 = 'yolo_v1'
+	yolov2 = 'yolo_v2'
+	textron = 'textron'
 
 
 class BoundingBox(BaseModel):

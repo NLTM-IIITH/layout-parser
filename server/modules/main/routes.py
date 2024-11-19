@@ -1,6 +1,4 @@
 import uuid
-from subprocess import call
-# from .croppadfix import *
 from tempfile import TemporaryDirectory
 from typing import List
 
@@ -8,6 +6,7 @@ import cv2
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
+from ..iitb.textron.helper import process_textron_output
 from .dependencies import save_uploaded_images
 from .helper import (Reading_Order_Generator, cropPadFix, process_ganga_layout,
                      process_image, process_image_craft, process_image_urdu_v1,
@@ -23,7 +22,7 @@ from .models import LayoutImageResponse, ModelChoice
 from .post_helper import add_padding, process_dilate, process_multiple_dilate
 from .readingOrder import *
 from .textualAttribute import *
-from .yolo_helper import do_yolo_infer
+from .yolo_helper import do_yolo_infer_v1, do_yolo_infer_v2
 
 router = APIRouter(
     prefix='/layout',
@@ -40,7 +39,8 @@ async def doctr_layout_parser(
     dilate: bool = Form(False),
     left_right_percentages: int = Form(0),
     header_percentage: int = Form(0),
-    footer_percentage: int = Form(0)	
+    footer_percentage: int = Form(0),
+    nms_threshold: float = Form(0.15),
 ):
     """
     API endpoint for calling the layout parser
@@ -68,8 +68,12 @@ async def doctr_layout_parser(
         ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
     elif model == ModelChoice.cropPadFix:
         ret = process_multiple_image_cropPadFix(folder_path)
-    elif model == ModelChoice.yolo:
-        ret = do_yolo_infer(folder_path)
+    elif model == ModelChoice.yolov1:
+        ret = do_yolo_infer_v1(folder_path, language, nms_threshold)
+    elif model == ModelChoice.yolov2:
+        ret = do_yolo_infer_v2(folder_path, language, nms_threshold)
+    elif model == ModelChoice.textron:
+        ret = process_textron_output(folder_path)
     if dilate:
         ret = process_multiple_dilate(ret)
     if padding:
@@ -83,6 +87,7 @@ async def layout_parser_swagger_only_demo(
     model: ModelChoice = Form(ModelChoice.doctr),
     dilate: bool = Form(False),
     language: str = Form('english'),
+    nms_threshold: float = Form(0.15),
 ):
     """
     This endpoint is only used to demonstration purposes.
@@ -101,9 +106,15 @@ async def layout_parser_swagger_only_demo(
     elif model == ModelChoice.tesseract:
         folder_path = os.path.dirname(image_path)
         regions = process_multiple_tesseract(folder_path, language)[0].regions
-    elif model == ModelChoice.yolo:
+    elif model == ModelChoice.yolov1:
         folder_path = os.path.dirname(image_path)
-        regions = do_yolo_infer(folder_path)[0].regions
+        regions = do_yolo_infer_v1(folder_path, language, nms_threshold)[0].regions
+    elif model == ModelChoice.yolov2:
+        folder_path = os.path.dirname(image_path)
+        regions = do_yolo_infer_v2(folder_path, language, nms_threshold)[0].regions
+    elif model == ModelChoice.textron:
+        folder_path = os.path.dirname(image_path)
+        regions = process_textron_output(folder_path)
     else:
         regions = process_image(image_path, model.value)
     if dilate:

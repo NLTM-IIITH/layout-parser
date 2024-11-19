@@ -48,23 +48,24 @@ def get_model_predict(model: YOLO, input_image: Image, save: bool = False, image
     """
     # Make predictions
     predictions = model.predict(
-                        imgsz=image_size, 
-                        source=input_image, 
-                        conf=conf,
-                        save=save, 
-                        augment=augment,
-                        flipud= 0.0,
-                        fliplr= 0.0,
-                        mosaic = 0.0,
-                        device = [0 if torch.cuda.is_available() else "cpu"]
-                        )
+        imgsz=image_size, 
+        source=input_image, 
+        conf=conf,
+        save=save, 
+        augment=augment,
+        flipud= 0.0,
+        fliplr= 0.0,
+        mosaic = 0.0,
+        device = [0 if torch.cuda.is_available() else "cpu"]
+    )
     
     # Transform predictions to pandas dataframe
     predictions = transform_predict_to_df(predictions, model.model.names)
     return predictions
 
-def do_yolo_infer(path):
-    model = YOLO('/home/layout/code/YOLO-text-detection/hindi_inference/chkpt/best.pt')
+def do_yolo_infer_v1(path, language='hindi', nms_threshold: float = 0.15):
+    model_path = f'/home/layout/models/yolo_v1/{language}.pt'
+    model = YOLO(model_path)
     ret = []
     print(path)
     for image in tqdm(glob.glob(join(path, '*')), desc='Performing inference'):
@@ -72,7 +73,7 @@ def do_yolo_infer(path):
         result = get_model_predict(
             model=model,
             input_image=image,
-            conf=0.15,
+            conf=nms_threshold,
             augment=False,
             image_size=1280,
             save=False
@@ -96,12 +97,36 @@ def do_yolo_infer(path):
     return ret
 
 
-# if __name__ == "__main__":
-#     model = YOLO("./chkpt/best.pt")
 
-#     source = "/home/layout/test"
-#     for image in glob.glob(source):
-#         result = get_model_predict(model=model,input_image=image,
-#                                    conf=0.15,augment=False,
-#                                    image_size = 1280, save= False)
-    
+def do_yolo_infer_v2(path, language='hindi', nms_threshold: float = 0.15):
+    model_path = f'/home/layout/models/yolo_v2/{language}.pt'
+    model = YOLO(model_path)
+    ret = []
+    print(path)
+    for image in tqdm(glob.glob(join(path, '*')), desc='Performing inference'):
+        print(image)
+        result = get_model_predict(
+            model=model,
+            input_image=image,
+            conf=nms_threshold,
+            augment=False,
+            image_size=1280,
+            save=False
+        )
+        regions = []
+        for i in range(len(result)):
+            regions.append(
+                Region.from_bounding_box(
+                    BoundingBox.from_xyxy((
+                        int(result['xmin'][i]),
+                        int(result['ymin'][i]),
+                        int(result['xmax'][i]),
+                        int(result['ymax'][i]),
+                    ))
+                )
+            )
+        ret.append(LayoutImageResponse(
+            image_name=basename(image),
+            regions=regions.copy(),
+        ))
+    return ret

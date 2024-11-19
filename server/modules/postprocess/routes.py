@@ -240,3 +240,21 @@ def detect_modality_apoorva_v2(si_request: PostprocessRequest) -> list[MIRespons
 	process_images(si_request.images, tmp.name)
 	call(f'./modality_iden_v2.sh {tmp.name}', shell=True)
 	return process_layout_output(tmp.name)
+
+
+
+@router.post(
+	'/language/iitj/{language}',
+	response_model=list[SIResponse],
+	response_model_exclude_none=True,
+)
+def identify_iitj_script(si_request: PostprocessRequest, language: str) -> list[SIResponse]:
+	"""
+	API inputs a list of images in base64 encoded string and outputs a list
+	of objects containing **"text"** as key and **language** as value
+	"""
+	print(language)
+	tmp = TemporaryDirectory(prefix='language_classify')
+	process_images(si_request.images, tmp.name)
+	call(f'./lang_iden_pola.sh {tmp.name} {language}', shell=True)
+	return process_layout_output(tmp.name)
