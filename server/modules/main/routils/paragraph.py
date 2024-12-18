@@ -331,7 +331,9 @@ def visualise_para_order(component, image, image_file_name):
     for i in range(1, len(centers)):
         cv2.line(image, centers[i - 1], centers[i], (0, 0, 255), 2)
     # os.makedirs('/home2/sreevatsa/ops_dataset_layoutfilter', exist_ok=True)
-    output_path = '/home2/sreevatsa/ops_dataset_layoutfilter/{}_paragraph_order.png'.format(os.path.basename(image_file_name).split('.')[0])
+    # output_path = '/home2/sreevatsa/ops_dataset_layoutfilter/{}_paragraph_order.png'.format(os.path.basename(image_file_name).split('.')[0])
+    os.makedirs('/ssd_scratch/sreevatsa/layout-parser/saved_images', exist_ok=True)
+    output_path = '/ssd_scratch/sreevatsa/layout-parser/saved_images/{}_paragraph_order.png'.format(os.path.basename(image_file_name).split('.')[0])
     cv2.imwrite(output_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR)) 
 
 #sort the paragraphs based on top-down and left-right order
