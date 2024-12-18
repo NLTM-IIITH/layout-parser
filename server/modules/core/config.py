@@ -1,7 +1,7 @@
 
 # this if the folder where all the input images are saved.
 # IMAGE_FOLDER = '/home/layout/layout-parser/images'
-IMAGE_FOLDER = '/data3/sreevatsa/layout-parser/saved_images'
+IMAGE_FOLDER = '/ssd_scratch/sreevatsa/layout-parser/saved_images'
 
 TESS_LANG = {
 	'english': 'eng',
