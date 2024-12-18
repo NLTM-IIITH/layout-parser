@@ -44,6 +44,7 @@ from .routils.column_utils import *
 from .routils.word_order_utils import *
 from .routils.plot_utils import *
 from .routils.new_read_order import *
+from .routils.hisam import *
 
 # TODO: remove this line and try to set the env from the docker-compose file.
 os.environ['USE_TORCH'] = '1'
@@ -52,10 +53,11 @@ def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
 
 t = time.time()
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # model_path = '/home/layout/models/v2_doctr/model.pt'
-model_path = '/data3/sreevatsa/models/db_resnet50.pt'
+# model_path = '/data3/sreevatsa/models/db_resnet50.pt'
+model_path = '/home/sreevatsa/py-scripts/db_resnet50.pt'
 
 PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
 if os.path.exists(model_path):
@@ -635,6 +637,26 @@ def process_image_worddetector(image_path: str) -> List[Region]:
 			)
 	return ret
 
+def hisam_process_image(directory):
+	seed = 42
+	model_type = 'vit_l'
+	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+	eval = True
+	eval_out_file = None
+	use_fgmask = False
+	existing_fgmask_input = None
+	total_points = 1500
+	batch_points = 100
+	layout_thresh = 0.5
+	input = [directory]
+	output = '/data'
+	attn_layers = 1
+	prompt_len = 12
+	bboxes = inference(seed, model_type, device, eval, eval_out_file, use_fgmask, existing_fgmask_input, total_points, batch_points, layout_thresh, input, output, attn_layers, prompt_len)
+
+	return [bboxes]
+
+
 ####READING ORDER
 def doctr_predictions(directory):
 #     #Gets the predictions from the model
@@ -657,15 +679,18 @@ def doctr_predictions(directory):
 	for words, dims in zip(regions, page_dims)
 	]
 	
-	return abs_coords
+	print(abs_coords)
+	return abs_coords	
 
 def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,col_only, use_yolo):
 	
 	print(width_p, header_p, footer_p)
 
-	output_folder_path = '/data3/sreevatsa/layout-parser/saved_images'
-	yolo_file_path = '/data3/sreevatsa/models/yolo_1024_best.pt'
-	pred = doctr_predictions(image_file)
+	output_folder_path = '/ssd_scratch/sreevatsa/layout-parser/saved_images'
+	yolo_file_path = '/ssd_scratch/sreevatsa/layout-parser/models/yolo_1024_best.pt'
+	
+ 	# pred = doctr_predictions(image_file)
+	pred = hisam_process_image(image_file)
 	print('Got predictions from docTR')
 	
 	if use_yolo is True:
@@ -712,6 +737,10 @@ def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,c
 	elif layout_json_path is not None:
 		component = component_after_pinp_not_ordered_after_layout
 	
+	visualise_para_order(component, image, image_file.split('/')[-1])
+	#save the component as df
+	component.to_csv('/ssd_scratch/sreevatsa/layout-parser/component.csv')
+
 	# print(component)
 	min_idx =  minimum_euclidean(component)
 	# print(min_idx)
