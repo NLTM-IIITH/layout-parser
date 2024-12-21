@@ -14,6 +14,7 @@ class ModelChoice(str, Enum):
 	v1_urdu = 'v1_urdu'
 	tesseract = 'tesseract'
 	cropPadFix = 'cropPadFix'
+	hisam = 'hisam'
 
 
 class BoundingBox(BaseModel):

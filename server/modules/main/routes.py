@@ -9,10 +9,14 @@ from fastapi.responses import FileResponse
 
 from .dependencies import save_uploaded_images
 from .helper import (Reading_Order_Generator, cropPadFix, process_image,
-                     process_image_craft, process_image_urdu_v1,
-                     process_image_worddetector, process_multiple_image_craft,
+                     process_image_craft, 
+                     process_image_urdu_v1,
+                     process_image_worddetector,
+                     process_image_worddetector_hisam,
+                     process_multiple_image_craft,
                      process_multiple_image_doctr,
                      process_multiple_image_doctr_v2,
+                     process_multiple_image_worddetector_hisam,
                      process_multiple_image_worddetector,
                      process_multiple_pages_ReadingOrderGenerator,
                      process_multiple_tesseract, process_multiple_urdu_v1,
@@ -51,6 +55,8 @@ async def doctr_layout_parser(
 		ret = process_multiple_image_doctr(folder_path)
 	elif model == ModelChoice.v2_doctr:
 		ret = process_multiple_image_doctr_v2(folder_path)
+	elif model == ModelChoice.hisam:
+		ret = process_multiple_image_worddetector_hisam(folder_path)
 	elif model == ModelChoice.v2_docTR_readingOrder:
 		ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
 	elif model == ModelChoice.v1_urdu:
@@ -89,6 +95,8 @@ async def layout_parser_swagger_only_demo(
 		regions = process_image_worddetector(image_path)
 	elif model == ModelChoice.v1_urdu:
 		regions = process_image_urdu_v1(image_path)
+	elif model == ModelChoice.hisam:
+		regions = process_image_worddetector_hisam(image_path)
 	elif model == ModelChoice.tesseract:
 		folder_path = os.path.dirname(image_path)
 		regions = process_multiple_tesseract(folder_path, language)[0].regions
