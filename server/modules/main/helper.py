@@ -53,7 +53,7 @@ def logtime(t: float, msg:  str) -> None:
 	print(f'[{int(time.time() - t)}s]\t {msg}')
 
 t = time.time()
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 # model_path = '/home/layout/models/v2_doctr/model.pt'
 # model_path = '/data3/sreevatsa/models/db_resnet50.pt'
@@ -324,6 +324,10 @@ def process_multiple_image_doctr_v2(folder_path: str) -> List[LayoutImageRespons
 		regions = []
 		for i, line in enumerate(lines):
 			for word in line.words:
+				print(word.geometry)
+				print(type(word.geometry))
+				print(convert_geometry_to_bbox(word.geometry, dim, padding=5))
+				# print(type(convert_geometry_to_bbox(word.geometry, dim, padding=5)))
 				regions.append(
 					Region.from_bounding_box(
 						convert_geometry_to_bbox(word.geometry, dim, padding=5),
@@ -640,7 +644,7 @@ def process_image_worddetector(image_path: str) -> List[Region]:
 def hisam_process_image(directory):
 	seed = 42
 	model_type = 'vit_l'
-	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+	device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 	eval = True
 	eval_out_file = None
 	use_fgmask = False
@@ -656,8 +660,55 @@ def hisam_process_image(directory):
 
 	return [bboxes]
 
+def process_image_worddetector_hisam(image_path: str) -> List[Region]:
+	ret = []
+	bboxes = hisam_process_image(image_path)
+	for i,item in enumerate(bboxes[0]):
+		print('Item',item)
+		#default in item is x1,y1,x2,y2
+		#convert it to x,y,w,h
+		ret.append(
+			Region.from_bounding_box(
+				BoundingBox(
+					x=item[0],
+					y=item[1],
+					w=item[2]-item[0],
+					h=item[3]-item[1],
+				),
+				line=i+1
+			)
+		)
+	return ret
 
-####READING ORDER
+def process_multiple_image_worddetector_hisam(folder_path: str) -> List[LayoutImageResponse]:
+	ret=[]
+	for file in os.listdir(folder_path):
+		file = os.path.join(folder_path, file)
+		bbox = hisam_process_image(file)
+		regions = []
+		for i,item in enumerate(bbox[0]):
+				regions.append(
+					Region.from_bounding_box(
+						BoundingBox(
+							x=item[0],
+							y=item[1],
+							w=item[2]-item[0],
+							h=item[3]-item[1],
+						),
+						line=i+1
+					)
+				)
+		ret.append(
+			LayoutImageResponse(
+				image_name=basename(file),
+				regions=regions.copy()
+			)
+		)
+	return ret
+        
+		
+
+#################################READING ORDER
 def doctr_predictions(directory):
 #     #Gets the predictions from the model
 	
@@ -691,6 +742,10 @@ def Reading_Order_Generator(image_file, width_p, header_p, footer_p, para_only,c
 	
  	# pred = doctr_predictions(image_file)
 	pred = hisam_process_image(image_file)
+	#print pred to a txt file
+	with open('/ssd_scratch/sreevatsa/doctr_output.txt', 'w') as f:
+		f.write(str(pred))
+	print(pred)
 	print('Got predictions from docTR')
 	
 	if use_yolo is True:
