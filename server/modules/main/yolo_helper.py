@@ -1,5 +1,5 @@
 import glob
-from os.path import basename, join
+from os.path import basename, exists, join
 
 import pandas as pd
 import torch
@@ -100,6 +100,8 @@ def do_yolo_infer_v1(path, language='hindi', nms_threshold: float = 0.15):
 
 def do_yolo_infer_v2(path, language='hindi', nms_threshold: float = 0.15):
     model_path = f'/home/layout/models/yolo_v2/{language}.pt'
+    if not exists(model_path):
+        model_path = f'/home/layout/models/yolo_v2/auto.pt'
     model = YOLO(model_path)
     ret = []
     print(path)
