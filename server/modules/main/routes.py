@@ -128,9 +128,15 @@ async def layout_parser_swagger_only_demo(
     img = cv2.imread(image_path)
     count = 1
     for i in bboxes:
-        img = cv2.rectangle(img, i[0], i[1], (0,0,255), 3)
-        img = cv2.putText(
-            img,
+        overlay = img.copy()
+        cv2.rectangle(
+            overlay,
+            i[0], i[1],
+            (255, 0, 0), -1
+        )
+        cv2.addWeighted(overlay, 0.3, img, 0.7, 0, img)
+        cv2.putText(
+            img, 
             str(count),
             (i[0][0]-5, i[0][1]-5),
             cv2.FONT_HERSHEY_COMPLEX,
