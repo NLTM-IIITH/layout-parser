@@ -58,7 +58,9 @@ async def doctr_layout_parser(
         ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
     elif model == ModelChoice.v1_urdu:
         ret = process_multiple_urdu_v1(folder_path)
-    elif model == ModelChoice.tesseract:
+    elif model == ModelChoice.tesseract2:
+        ret = process_multiple_tesseract(folder_path, language)
+    elif model == ModelChoice.openseg:
         ret = process_multiple_tesseract(folder_path, language)
     elif model == ModelChoice.openseg_v1:
         ret = process_multiple_tesseract(folder_path, language)
