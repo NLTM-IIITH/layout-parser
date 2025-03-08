@@ -20,6 +20,7 @@ class ModelChoice(str, Enum):
 	textron = 'textron'
 	hisam = 'hisam'
 	openseg = 'openseg'
+	yoloro = 'yolo_ro'
 
 
 class BoundingBox(BaseModel):

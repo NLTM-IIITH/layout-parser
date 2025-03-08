@@ -22,7 +22,7 @@ from .models import LayoutImageResponse, ModelChoice
 from .post_helper import add_padding, process_dilate, process_multiple_dilate
 from .readingOrder import *
 from .textualAttribute import *
-from .yolo_helper import do_yolo_infer_v1, do_yolo_infer_v2
+from .yolo_helper import do_yolo_infer_ro, do_yolo_infer_v1, do_yolo_infer_v2
 
 router = APIRouter(
     prefix='/layout',
@@ -74,6 +74,8 @@ async def doctr_layout_parser(
         ret = do_yolo_infer_v1(folder_path, language, nms_threshold)
     elif model == ModelChoice.yolov2:
         ret = do_yolo_infer_v2(folder_path, language, nms_threshold)
+    elif model == ModelChoice.yoloro:
+        ret = do_yolo_infer_ro(folder_path, language, nms_threshold)
     elif model == ModelChoice.textron:
         ret = process_textron_output(folder_path)
     if dilate:
@@ -114,6 +116,9 @@ async def layout_parser_swagger_only_demo(
     elif model == ModelChoice.yolov2:
         folder_path = os.path.dirname(image_path)
         regions = do_yolo_infer_v2(folder_path, language, nms_threshold)[0].regions
+    elif model == ModelChoice.yoloro:
+        folder_path = os.path.dirname(image_path)
+        regions = do_yolo_infer_ro(folder_path, language, nms_threshold)[0].regions
     elif model == ModelChoice.textron:
         folder_path = os.path.dirname(image_path)
         regions = process_textron_output(folder_path)
