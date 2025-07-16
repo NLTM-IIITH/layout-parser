@@ -29,4 +29,6 @@ TESS_LANG = {
     'sanskrit': 'san',
 }
 
+TESSDATA_DIR = '/home/ocr/models/pretrained/tesseract'
+
 TEXT_ATTB_MODEL_PATH = "/home/layout/models/text-attb-v1/direct_train_doc_level_+15_model_cnn.pth"

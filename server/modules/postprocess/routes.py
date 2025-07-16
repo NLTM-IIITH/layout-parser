@@ -1,7 +1,7 @@
 from subprocess import call
 from tempfile import TemporaryDirectory
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from .helper import process_images, process_layout_output
 from .models import MIResponse, PostprocessRequest, SIResponse
@@ -117,6 +117,10 @@ def identify_3class_english_hindi_punjabi_language(si_request: PostprocessReques
     API inputs a list of images in base64 encoded string and outputs a list
     of objects containing **"text"** as key and **language** as value
     """
+    #raise HTTPException(
+    #    status_code=503,
+    #    detail='This Endpoint is temporarily disabled due to prioritizing PRSG work'
+    #)
     tmp = TemporaryDirectory(prefix='language_classify')
     process_images(si_request.images, tmp.name)
     call(f'./lang_iden_3class_enhipa.sh {tmp.name}', shell=True)
@@ -161,7 +165,7 @@ def identify_scenetext_language(si_request: PostprocessRequest) -> list[SIRespon
 
 
 @router.post(
-    '/script',
+    '/script/old',
     response_model=list[SIResponse],
     response_model_exclude_none=True
 )
@@ -257,4 +261,48 @@ def identify_iitj_script(si_request: PostprocessRequest, language: str) -> list[
     tmp = TemporaryDirectory(prefix='language_classify')
     process_images(si_request.images, tmp.name)
     call(f'./lang_iden_pola.sh {tmp.name} {language}', shell=True)
+    return process_layout_output(tmp.name)
+
+
+
+
+
+@router.post(
+    '/script/{language}',
+    response_model=list[SIResponse],
+    response_model_exclude_none=True,
+)
+def identify_script_asim_code(si_request: PostprocessRequest, language: str) -> list[SIResponse]:
+    """
+    API inputs a list of images in base64 encoded string and outputs a list
+    of objects containing **"text"** as key and **language** as value.
+    Only available for **Assamese**, **Bengali**, **Kannada**, **Punjabi**, **Tamil**, **Telugu**, **Urdu**,
+    **Maniprui**, **Oriya**, **Gujarati**.
+    """
+    print(language)
+    tmp = TemporaryDirectory(prefix='script_classify')
+    process_images(si_request.images, tmp.name)
+    call(f'./script_sep.sh {tmp.name} {language}', shell=True)
+    return process_layout_output(tmp.name)
+
+
+@router.post(
+    '/script/3class/{language}',
+    response_model=list[SIResponse],
+    response_model_exclude_none=True,
+)
+def identify_script_3class(si_request: PostprocessRequest, language: str) -> list[SIResponse]:
+    """
+    This is a 3class classification of the script of the word images.
+    first 2 classes are **english** and **hindi** and the last class is the
+    other indic language.
+    API inputs a list of images in base64 encoded string and outputs a list
+    of objects containing **"text"** as key and **language** as value.
+    Only available for 9 language: **Assamese**, **Bengali**, **Gujarati**, 
+    **Kannada**, **Malayalam**, **Punjabi**, **Tamil**, **Telugu**, **Urdu**.
+    """
+    print(language)
+    tmp = TemporaryDirectory(prefix='script_classify')
+    process_images(si_request.images, tmp.name)
+    call(f'./script_sep_3class.sh {tmp.name} {language}', shell=True)
     return process_layout_output(tmp.name)

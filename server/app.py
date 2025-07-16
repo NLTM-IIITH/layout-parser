@@ -3,6 +3,7 @@ from datetime import datetime
 from dateutil.tz import gettz
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from .modules.cegis.routes import router as cegis_router
 from .modules.iitb.routes import router as iitb_router
@@ -36,3 +37,5 @@ app.include_router(main_router)
 app.include_router(cegis_router)
 app.include_router(postprocess_router)
 app.include_router(iitb_router)
+
+Instrumentator().instrument(app).expose(app)

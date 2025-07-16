@@ -1,28 +1,13 @@
 import uuid
-from tempfile import TemporaryDirectory
-from typing import List
+from os.path import dirname
 
 import cv2
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import FileResponse
 
-from ..iitb.textron.helper import process_textron_output
-from .dependencies import save_uploaded_images
-from .helper import (Reading_Order_Generator, cropPadFix, process_ganga_layout,
-                     process_image, process_image_craft, process_image_urdu_v1,
-                     process_image_worddetector, process_multiple_image_craft,
-                     process_multiple_image_cropPadFix,
-                     process_multiple_image_doctr,
-                     process_multiple_image_doctr_v2,
-                     process_multiple_image_worddetector,
-                     process_multiple_pages_ReadingOrderGenerator,
-                     process_multiple_tesseract, process_multiple_urdu_v1,
-                     save_uploaded_image)
+from .dependencies import save_uploaded_image, save_uploaded_images
+from .factory import PROCESSOR_REGISTORY
 from .models import LayoutImageResponse, ModelChoice
-from .post_helper import add_padding, process_dilate, process_multiple_dilate
-from .readingOrder import *
-from .textualAttribute import *
-from .yolo_helper import do_yolo_infer_ro, do_yolo_infer_v1, do_yolo_infer_v2
 
 router = APIRouter(
     prefix='/layout',
@@ -30,326 +15,101 @@ router = APIRouter(
 )
 
 
-@router.post('/', response_model=List[LayoutImageResponse])
-async def doctr_layout_parser(
+@router.get('/ping')
+async def ping():
+    return 'pong'
+
+
+@router.post('/', response_model=list[LayoutImageResponse])
+async def new_main_layout_parser(
     folder_path: str = Depends(save_uploaded_images),
     model: ModelChoice = Form(ModelChoice.doctr),
     language: str = Form('english'),
-    padding: int = Form(0),
-    dilate: bool = Form(False),
-    left_right_percentages: int = Form(0),
-    header_percentage: int = Form(0),
-    footer_percentage: int = Form(0),
-    nms_threshold: float = Form(0.15),
-):
-    """
-    API endpoint for calling the layout parser
-    """
-    print(model.value)
-    if model == ModelChoice.craft:
-        ret = process_multiple_image_craft(folder_path)
-    elif model == ModelChoice.worddetector:
-        ret = process_multiple_image_worddetector(folder_path)
-    elif model == ModelChoice.doctr:
-        ret = process_multiple_image_doctr(folder_path)
-    elif model == ModelChoice.v2_doctr:
-        ret = process_multiple_image_doctr_v2(folder_path)
-    elif model == ModelChoice.v2_docTR_readingOrder:
-        ret = process_multiple_pages_ReadingOrderGenerator(folder_path, left_right_percentages, header_percentage, footer_percentage)
-    elif model == ModelChoice.v1_urdu:
-        ret = process_multiple_urdu_v1(folder_path)
-    elif model == ModelChoice.tesseract2:
-        ret = process_multiple_tesseract(folder_path, language)
-    elif model == ModelChoice.openseg:
-        ret = process_multiple_tesseract(folder_path, language)
-    elif model == ModelChoice.openseg_v1:
-        ret = process_multiple_tesseract(folder_path, language)
-    elif model ==ModelChoice.v1_textAttb:
-        # order is working
-        tmp = TemporaryDirectory(prefix="misc")
-        ret = process_multiple_pages_TextualAttribute(folder_path,tmp.name)
-    elif model == ModelChoice.cropPadFix:
-        ret = process_multiple_image_cropPadFix(folder_path)
-    elif model == ModelChoice.yolov1:
-        ret = do_yolo_infer_v1(folder_path, language, nms_threshold)
-    elif model == ModelChoice.yolov2:
-        ret = do_yolo_infer_v2(folder_path, language, nms_threshold)
-    elif model == ModelChoice.yoloro:
-        ret = do_yolo_infer_ro(folder_path, language, nms_threshold)
-    elif model == ModelChoice.textron:
-        ret = process_textron_output(folder_path)
-    if dilate:
-        ret = process_multiple_dilate(ret)
-    if padding:
-        ret = add_padding(ret, padding)
-    return ret
-
+    registry: dict = Depends(lambda: PROCESSOR_REGISTORY)
+) -> list[LayoutImageResponse]:
+    try:
+        processor = registry[model]
+    except KeyError:
+        raise HTTPException(400, f'Model {model.value} not supported')
+    
+    result = await processor(
+        folder_path,
+        language=language
+    )
+    return result
 
 @router.post('/visualize')
-async def layout_parser_swagger_only_demo(
-    image: UploadFile = File(...),
+async def new_main_layout_parser_visualize(
+    image_path: str = Depends(save_uploaded_image),
     model: ModelChoice = Form(ModelChoice.doctr),
-    dilate: bool = Form(False),
     language: str = Form('english'),
-    nms_threshold: float = Form(0.15),
-):
-    """
-    This endpoint is only used to demonstration purposes.
-    this endpoint returns/displays the input image with the
-    bounding boxes clearly marked in blue rectangles.
-
-    PS: This endpoint is not to be called from outside of swagger
-    """
-    image_path = save_uploaded_image(image)
-    if model == ModelChoice.craft:
-        regions = process_image_craft(image_path)
-    elif model == ModelChoice.worddetector:
-        regions = process_image_worddetector(image_path)
-    elif model == ModelChoice.v1_urdu:
-        regions = process_image_urdu_v1(image_path)
-    elif model == ModelChoice.tesseract:
-        folder_path = os.path.dirname(image_path)
-        regions = process_multiple_tesseract(folder_path, language)[0].regions
-    elif model == ModelChoice.yolov1:
-        folder_path = os.path.dirname(image_path)
-        regions = do_yolo_infer_v1(folder_path, language, nms_threshold)[0].regions
-    elif model == ModelChoice.yolov2:
-        folder_path = os.path.dirname(image_path)
-        regions = do_yolo_infer_v2(folder_path, language, nms_threshold)[0].regions
-    elif model == ModelChoice.yoloro:
-        folder_path = os.path.dirname(image_path)
-        regions = do_yolo_infer_ro(folder_path, language, nms_threshold)[0].regions
-    elif model == ModelChoice.textron:
-        folder_path = os.path.dirname(image_path)
-        regions = process_textron_output(folder_path)
-    else:
-        regions = process_image(image_path, model.value)
-    if dilate:
-        regions = process_dilate(regions, image_path)
+    order: bool = Form(True),
+    line: bool = Form(False),
+    center_point: bool = Form(True),
+    font_size: float = Form(1.0, ge=0.1, le=1.0),
+    registry: dict = Depends(lambda: PROCESSOR_REGISTORY)
+) -> FileResponse:
+    try:
+        processor = registry[model]
+    except KeyError:
+        raise HTTPException(400, f'Model {model.value} not supported')
+    
+    folder_path = dirname(image_path)
+    result = await processor(
+        folder_path,
+        language=language
+    )
+    regions = result[0].regions
     save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
         str(uuid.uuid4())
     )
     # TODO: all the lines after this can be transfered to the helper.py file
     bboxes = [i.bounding_box for i in regions]
-    bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
-    img = cv2.imread(image_path)
-    count = 1
+    orders = [i.order for i in regions]
+    lines = [i.line for i in regions]
+    bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h), j, k) for i,j,k  in zip(bboxes, orders, lines)]
+    img = cv2.imread(image_path) # type: ignore
     for i in bboxes:
         overlay = img.copy()
-        cv2.rectangle(
+        cv2.rectangle( # type: ignore
             overlay,
             i[0], i[1],
-            (255, 0, 0), -1
+            (255, 0, 0) if i[2] == -1 else (0,255,0), -1
         )
-        cv2.addWeighted(overlay, 0.3, img, 0.7, 0, img)
-        cv2.putText(
-            img, 
-            str(count),
-            (i[0][0]-5, i[0][1]-5),
-            cv2.FONT_HERSHEY_COMPLEX,
-            1,
-            (0,0,255),
-            1,
-            cv2.LINE_AA
-        )
-        count += 1
-    cv2.imwrite(save_location, img)
-    return FileResponse(save_location)
-
-
-@router.post('/ganga', response_model=LayoutImageResponse)
-async def doctr_layout_parser(
-    folder_path: str = Depends(save_uploaded_images),
-):
-    """
-    API endpoint for calling the layout parser
-    """
-    return process_ganga_layout(folder_path)
-
-@router.post('/ganga/visualize')
-async def layout_parser_swagger_only_demo(
-    image: UploadFile = File(...),
-):
-    """
-    This endpoint is only used to demonstration purposes.
-    this endpoint returns/displays the input image with the
-    bounding boxes clearly marked in blue rectangles.
-
-    PS: This endpoint is not to be called from outside of swagger
-    """
-    image_path = save_uploaded_image(image)
-    folder_path = os.path.dirname(image_path)
-    regions = process_ganga_layout(folder_path).regions
-    save_location = '/home/layout/layout-parser/images/{}.jpg'.format(
-        str(uuid.uuid4())
-    )
-    # TODO: all the lines after this can be transfered to the helper.py file
-    # bboxes = [i.bounding_box for i in regions]
-    # bboxes = [((i.x, i.y), (i.x+i.w, i.y+i.h)) for i in bboxes]
-    bboxes = [(
-        (i.bounding_box.x, i.bounding_box.y),
-        (i.bounding_box.x + i.bounding_box.w, i.bounding_box.y + i.bounding_box.h),
-        i.label
-    ) for i in regions]
-    img = cv2.imread(image_path)
-    count = 1
-    for i in bboxes:
-        img = cv2.rectangle(img, i[0], i[1], (0,0,255), 3)
-        img = cv2.putText(
-            img,
-            str(i[2]),
-            (i[0][0]-5, i[0][1]-5),
-            cv2.FONT_HERSHEY_COMPLEX,
-            1,
-            (0,0,255),
-            1,
-            cv2.LINE_AA
-        )
-        count += 1
-    cv2.imwrite(save_location, img)
-    return FileResponse(save_location)
-
-@router.post('/visualize/readingorder')
-async def layout_parser_swagger_only_demo_Reading_Order(
-    image: UploadFile = File(...),
-    left_right_percentage: int = Form(
-        0,
-        ge=0,
-        le=100,
-        description='Left right margins in percent of the total page width'
-    ),
-    header_percentage: int = Form(
-        0,
-        ge=0,
-        le=100,
-        description='Header margin in percent of the total page height from top'
-    ),
-    footer_percentage: int = Form(
-        0,
-        ge=0,
-        le=100,
-        description='Footer margin in percent of the total page height from bottom'
-    ),
-    para_only: bool = False,
-    col_only:bool = False
-):
-    """
-    This endpoint is only used to demonstration purposes.
-    this endpoint returns/displays the input image with the
-    bounding boxes clearly marked in blue rectangles.
-
-    PS: This endpoint is not to be called from outside of swagger
-    """
-    image_path = save_uploaded_image(image)
-    save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-    if para_only is True and col_only is False:
-        img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only,col_only)
-        cv2.imwrite(save_location, img)
-        return FileResponse(save_location)
-    elif para_only is False and col_only is True:
-        img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only,col_only)
-        cv2.imwrite(save_location, img)
-        return FileResponse(save_location)
-    elif para_only is True and col_only is True:
-        pass
-    elif para_only is False and col_only is False:
-        img,_ = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only,col_only)
-        cv2.imwrite(save_location,img)
-        return FileResponse(save_location)
-
-
-@router.post('/visualize/paragraph_order')
-async def layout_parser_swagger_only_demo_Paragraph_Reading_Order(
-    image: UploadFile = File(...),
-    left_right_percentage: int = Form(
-        0,
-        ge=0,
-        le=100,
-        description='Left right margins in percent of the total page width'
-    ),
-    header_percentage: int = Form(
-        0,
-        ge=0,
-        le=100,
-        description='Header margin in percent of the total page height from top'
-    ),
-    footer_percentage: int = Form(
-        0,
-        ge=0,
-        le=100,
-        description='Footer margin in percent of the total page height from bottom'
-    )	
-):
-    """
-    This endpoint is only used to demonstration purposes.
-    this endpoint returns/displays the input image with the
-    paragraph bounding boxes clearly marked in blue rectangles.
-
-    PS: This endpoint is not to be called from outside of swagger
-    """
-    image_path = save_uploaded_image(image)
-    save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-    para_only = True
-    img = Reading_Order_Generator(image_path, left_right_percentage, header_percentage, footer_percentage, para_only)
-    cv2.imwrite(save_location, img)
-    return FileResponse(save_location)
-
-
-#croppadfix
-@router.post('/visualize/croppadfixForTextBooks')
-async def layout_parser_swagger_only_demo_Crop_Pad_fix(
-    image: UploadFile = File(...)	
-):
-    """
-    This endpoint is only used to demonstration purposes.
-    this endpoint returns/displays the input image with the
-    bounding boxes clearly marked in rectangles.
-
-    PS: This endpoint is not to be called from outside of swagger
-    """
-    image_path = save_uploaded_image(image)
-    save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-    
-    img_cpf = cropPadFix(image_path)
-    cv2.imwrite(save_location,img_cpf)
-    return FileResponse(save_location)
-
-@router.post('/visualize/textual_attribute')
-async def layout_parser_swagger_only_demo_Textual_Attribute(
-    image: UploadFile = File(...)
-):
-    """
-    <h2>Description : </h2>\n
-    This API is used to classify the word based textual attributes like None, Bold, Italic or BoldItalic 	 based on the word level features (V1 version : December 8 2023). It currently runs well on Scanned Notices , Govt. Circulars and Lok Sabha documents.\n
-
-    <h2>Input : </h2>\n
-    You need to upload a single `.jpg` file document image. 
-
-    <h2>Interpretation of Output : </h2>\n
-    This endpoint is only used to demonstration purposes. \n
-    This endpoint returns/displays the input image with the
-    bounding boxes clearly marked in colored rectangles based on the textual attribute : \n
-    1. For no attribute : Blue color
-    2. For bold attribute: Red Color
-    3. For italic attribute : Green Color
-    4. For bold+italic attribute : Purple color
-
-    PS: This endpoint is not to be called from outside of swagger
-    """
-
-    image_path = save_uploaded_image(image) 
-    # saving the uploaded image
-
-    """
-    My working and model functions (don't edit)
-    """
-
-    tmp = TemporaryDirectory(prefix="misc")
-    output_image = Visualization(image_location=image_path).visualize(temp_file=tmp.name)
-    """
-    End
-    """
-
-    save_location = '/home/layout/layout-parser/images/{}.jpg'.format(str(uuid.uuid4()))
-    cv2.imwrite(save_location,output_image)
+        cv2.addWeighted(overlay, 0.3, img, 0.7, 0, img) # type: ignore
+        if center_point:
+            cv2.circle( # type: ignore
+                img,
+                (
+                    (i[0][0] + i[1][0]) // 2,
+                    (i[0][1] + i[1][1]) // 2,
+                ),
+                3,
+                (0, 0, 255),
+                -1
+            )
+        if order:
+            cv2.putText( # type: ignore
+                img, 
+                str(i[2]),
+                (i[0][0]-5, i[0][1]-5),
+                cv2.FONT_HERSHEY_COMPLEX, # type: ignore
+                font_size,
+                (0,0,255),
+                1,
+                cv2.LINE_AA # type: ignore
+            )
+        if line:
+            cv2.putText( # type: ignore
+                img, 
+                str(i[3]),
+                (i[0][0]-5, i[0][1]-5),
+                cv2.FONT_HERSHEY_COMPLEX, # type: ignore
+                font_size,
+                (255,0,0),
+                1,
+                cv2.LINE_AA # type: ignore
+            )
+            
+    cv2.imwrite(save_location, img) # type: ignore
     return FileResponse(save_location)

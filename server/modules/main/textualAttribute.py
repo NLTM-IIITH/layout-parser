@@ -29,7 +29,7 @@ from torchvision.transforms import ToTensor
 
 from server.modules.core.config import TEXT_ATTB_MODEL_PATH as BASE_MODEL_PATH
 
-from .helper import PREDICTOR_V2, convert_geometry_to_bbox, doctr_predictions
+from .helper import convert_geometry_to_bbox, doctr_predictions
 from .models import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -298,9 +298,21 @@ def process_multiple_pages_TextualAttribute(folder_path,temp_file_path):
     model = Model()
     output_list = model.predict(temp_file_path=temp_file_path)
 
+    PREDICTOR_V2 = ocr_predictor(pretrained=True).to(device)
+    if os.path.exists('/home/layout/models/v2_doctr/model.pt'):
+        state_dict = torch.load('/home/layout/models/v2_doctr/model.pt')
+
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            name = k[7:] # remove `module.`
+            new_state_dict[name] = v
+        PREDICTOR_V2.det_predictor.model.load_state_dict(new_state_dict)
+
+
     files = [join(folder_path, i) for i in os.listdir(folder_path)]
     doc = DocumentFile.from_images(files)
     a = PREDICTOR_V2(doc)
+    del PREDICTOR_V2
     ret = []
     cnt=0
     prev_cnt=0

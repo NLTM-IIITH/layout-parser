@@ -1,4 +1,14 @@
+from glob import glob
+from os.path import basename, join
+from typing import Any
+
+from tqdm import tqdm
 from ultralytics import YOLO
+
+from server.config import settings
+
+from ..factory import register
+from ..models import BoundingBox, LayoutImageResponse, ModelChoice, Region
 
 
 class YOLOJsonExtractor:
@@ -127,3 +137,40 @@ class BoundingBoxVisualizer:
                 reading_order += 1
             ordered_rows.append(ordered_boxes)
         return ordered_rows
+
+
+class YoloROProcessor:
+    async def __call__(self, folder_path: str, **kwargs: Any):
+        language = kwargs.get('language', 'hindi')
+        model_path = settings.yolov2_model_path / f'{language}.pt'
+        if not model_path.exists():
+            model_path = settings.yolov2_model_path / 'auto.pt'
+        yolo_extractor = YOLOJsonExtractor(model_path)
+        visualizer = BoundingBoxVisualizer(delta_y=50)
+        ret = []
+        for image in tqdm(glob(join(folder_path, '*')), desc='Performing inference'):
+            # 1 is the pagenumber for the bboxes, which is static.
+            result_json = yolo_extractor.process_image(image, 1)
+            ordered_boxes = visualizer.get_reading_order(result_json)
+            regions = []
+            for lineno, line in enumerate(ordered_boxes):
+                for _, word in enumerate(line):
+                    regions.append(
+                        Region.from_bounding_box(
+                            BoundingBox.from_xyxy((
+                                word['bounding_box']['x_min'],
+                                word['bounding_box']['y_min'],
+                                word['bounding_box']['x_max'],
+                                word['bounding_box']['y_max'],
+                            )),
+                            line=lineno + 1,
+                            order=word['reading_order']
+                        )
+                    )
+            ret.append(LayoutImageResponse(
+                image_name=basename(image),
+                regions=regions.copy(),
+            ))
+        return ret
+
+register(ModelChoice.yoloro)(YoloROProcessor())
