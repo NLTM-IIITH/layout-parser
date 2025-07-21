@@ -25,9 +25,10 @@ class ModelChoice(str, Enum):
     v0403 = 'V-04.03'
     v0404 = 'V-04.04'
     v0405 = 'V-04.05'
+    v0406 = 'V-04.06'
     v0501 = 'V-05.01' # Merge V-04.02 + Openseg
     v0502 = 'V-05.02' # Merge V-04.02 + Openseg + Craft
-    # merge3 = 'merge3'
+    v0503 = 'V-05.03' # Merge V-04.02 + Openseg + Craft (New Version)
 
 
 class BoundingBox(BaseModel):
@@ -44,7 +45,9 @@ class BoundingBox(BaseModel):
         description='height of the bbox (in pixel)'
     )
 
-    def __eq__(self, other: "BoundingBox") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BoundingBox):
+            return NotImplemented
         center = (self.x+self.w/2, self.y+self.h/2)
         other_center = (other.x+other.w/2, other.y+other.h/2)
         return all((
@@ -93,7 +96,9 @@ class Region(BaseModel):
     confidence: float = 0.0
     attributes: dict = {}
 
-    def __eq__(self, other: "Region"):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Region):
+            return NotImplemented
         return self.bounding_box == other.bounding_box
 
     def __hash__(self):
