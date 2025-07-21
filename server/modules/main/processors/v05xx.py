@@ -13,7 +13,9 @@ from server.config import settings
 from ..factory import register
 from ..models import BoundingBox, LayoutImageResponse, ModelChoice, Region
 from .craft import CRAFTProcessor
+from .merge_codes.merge_ajoy_openseg import merge_ajoy_openseg
 from .merge_codes.merge_ajoy_openseg_craft import merge_all_regions
+from .merge_codes.merge_ajoy_openseg_craft_v3 import merge_3_new
 
 
 def process_single_tesseract(image_info):
@@ -104,6 +106,15 @@ class V05xxProcessor:
     async def craft_infer(self, folder_path: str) -> list[LayoutImageResponse]:
         return await CRAFTProcessor()(folder_path)
 
+    async def merge_ajoy_openseg(
+        self, ajoy_result: list[LayoutImageResponse],
+        openseg_result: list[LayoutImageResponse]
+    ) -> list[LayoutImageResponse]:
+        ajoy_data = [i.model_dump() for i in ajoy_result]
+        openseg_data = [i.model_dump() for i in openseg_result]
+        merged_data = merge_ajoy_openseg(openseg_data, ajoy_data)
+        return [LayoutImageResponse.model_validate(i) for i in merged_data]
+
     async def merge_ajoy_openseg_craft(
         self, ajoy_result: list[LayoutImageResponse],
         openseg_result: list[LayoutImageResponse],
@@ -112,18 +123,24 @@ class V05xxProcessor:
         ajoy_data = [i.model_dump() for i in ajoy_result]
         openseg_data = [i.model_dump() for i in openseg_result]
         craft_data = [i.model_dump() for i in craft_result]
-        merged_data = merge_all_regions(openseg_data, ajoy_data, craft_data)
+        if self.model == 'V-05.02':
+            merged_data = merge_all_regions(openseg_data, ajoy_data, craft_data)
+        else:
+            merged_data = merge_3_new(openseg_data, ajoy_data, craft_data)
         return [LayoutImageResponse.model_validate(i) for i in merged_data]
 
     async def __call__(self, folder_path: str, **kwargs: Any):
         language = kwargs.get('language', 'english')
         ajoy_result = await self.ajoy_infer(folder_path)
         openseg_result = await self.openseg_infer(folder_path, language)
-        craft_result = await self.craft_infer(folder_path)
-
-        return await self.merge_ajoy_openseg_craft(
-            ajoy_result, openseg_result, craft_result
-        )
+        if self.model == 'V-05.01':
+            return await self.merge_ajoy_openseg(ajoy_result, openseg_result)
+        else:
+            craft_result = await self.craft_infer(folder_path)
+            return await self.merge_ajoy_openseg_craft(
+                ajoy_result, openseg_result, craft_result
+            )
 
 register(ModelChoice.v0501)(V05xxProcessor(model='V-05.01'))
 register(ModelChoice.v0502)(V05xxProcessor(model='V-05.02'))
+register(ModelChoice.v0503)(V05xxProcessor(model='V-05.03'))

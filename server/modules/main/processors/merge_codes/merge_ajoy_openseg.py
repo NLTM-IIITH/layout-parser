@@ -77,92 +77,33 @@ def assign_orders_based_on_neighbors(union_data):
                             r1["order"] = R6["order"]
                             r1["line"] = R6.get("line", -1) - 1
 
-def yx_sort(regions):
-    return sorted(regions, key=lambda r: (r["bounding_box"]["y"], r["bounding_box"]["x"]))
-
-def order_regions_like_2json(ref_regions, target_regions):
-    ref_sorted = yx_sort(ref_regions)
-    target_sorted = yx_sort(target_regions)
-    for i, region in enumerate(target_sorted):
-        region["order"] = ref_sorted[i % len(ref_sorted)]["order"]
-        region["line"] = ref_sorted[i % len(ref_sorted)].get("line", -1)
-    return target_sorted
-
-def remove_y_overlaps(regions):
-    non_overlapping = []
-    for i, r1 in enumerate(regions):
-        y1, h1 = r1["bounding_box"]["y"], r1["bounding_box"]["h"]
-        y2 = y1 + h1
-        overlaps = False
-        for j, r2 in enumerate(regions):
-            if i == j:
-                continue
-            ry1, rh1 = r2["bounding_box"]["y"], r2["bounding_box"]["h"]
-            ry2 = ry1 + rh1
-            if not (ry2 < y1 or ry1 > y2):
-                overlaps = True
-                break
-        if not overlaps:
-            non_overlapping.append(r1)
-    return non_overlapping
-
-def remove_smaller_overlapping_regions(union_data):
-    def get_intersection_area(b1, b2):
-        x_left = max(b1["x"], b2["x"])
-        y_top = max(b1["y"], b2["y"])
-        x_right = min(b1["x"] + b1["w"], b2["x"] + b2["w"])
-        y_bottom = min(b1["y"] + b1["h"], b2["y"] + b2["h"])
-        if x_right <= x_left or y_bottom <= y_top:
-            return 0
-        return (x_right - x_left) * (y_bottom - y_top)
-
-    for image_entry in union_data:
-        regions = image_entry["regions"]
-        keep_flags = [True] * len(regions)
-        for i in range(len(regions)):
-            if not keep_flags[i]:
-                continue
-            box1 = regions[i]["bounding_box"]
-            area1 = box1["w"] * box1["h"]
-            for j in range(i + 1, len(regions)):
-                if not keep_flags[j]:
-                    continue
-                box2 = regions[j]["bounding_box"]
-                area2 = box2["w"] * box2["h"]
-                inter_area = get_intersection_area(box1, box2)
-                if inter_area == 0:
-                    continue
-                if area1 < area2:
-                    smaller_idx = i
-                else:
-                    smaller_idx = j
-                if inter_area / min(area1, area2) > 0.5:
-                    keep_flags[smaller_idx] = False
-                    if smaller_idx == i:
-                        break
-        image_entry["regions"] = [r for k, r in enumerate(regions) if keep_flags[k]]
-
 def resolve_duplicate_orders(union_data):
     for image_entry in union_data:
         regions = image_entry["regions"]
         regions.sort(key=lambda r: r.get("order", 0))
+
         new_regions = []
         i = 0
         current_order = 0
+
         while i < len(regions):
+            # Collect all regions with same order
             base_order = regions[i]["order"]
             group = [regions[i]]
             i += 1
             while i < len(regions) and regions[i]["order"] == base_order:
                 group.append(regions[i])
                 i += 1
+
             if len(group) == 1:
                 group[0]["order"] = current_order
                 new_regions.append(group[0])
                 current_order += 1
             else:
+                # Divide group into Y-overlapping subgroups
                 subgroups = []
                 used = set()
+
                 for idx, r1 in enumerate(group):
                     if idx in used:
                         continue
@@ -175,64 +116,80 @@ def resolve_duplicate_orders(union_data):
                             continue
                         ry1 = group[jdx]["bounding_box"]["y"]
                         ry2 = ry1 + group[jdx]["bounding_box"]["h"]
-                        if not (ry2 < y1 or ry1 > y2):
+                        if not (ry2 < y1 or ry1 > y2):  # Overlaps in Y
                             subgroup.append(group[jdx])
                             used.add(jdx)
                     subgroups.append(sorted(subgroup, key=lambda r: r["bounding_box"]["x"]))
+
+                # Sort subgroups by Y
                 subgroups.sort(key=lambda g: g[0]["bounding_box"]["y"])
+
                 for subgroup in subgroups:
                     for r in subgroup:
                         r["order"] = current_order
                         new_regions.append(r)
                         current_order += 1
+
+        # Replace regions with deduplicated list
         image_entry["regions"] = new_regions
 
-def integrate_3json(union_data, map3, map1, map2):
-    added_from_3 = 0
+def remove_smaller_overlapping_regions(union_data):
+    def get_intersection_area(b1, b2):
+        x_left = max(b1["x"], b2["x"])
+        y_top = max(b1["y"], b2["y"])
+        x_right = min(b1["x"] + b1["w"], b2["x"] + b2["w"])
+        y_bottom = min(b1["y"] + b1["h"], b2["y"] + b2["h"])
+
+        if x_right <= x_left or y_bottom <= y_top:
+            return 0
+        return (x_right - x_left) * (y_bottom - y_top)
 
     for image_entry in union_data:
-        img_name = image_entry["image_name"]
-        merged_regions = image_entry["regions"]
-        regions3 = map3.get(img_name, [])
-        if not regions3:
-            continue
+        regions = image_entry["regions"]
+        keep_flags = [True] * len(regions)
 
-        # No order reassignment from 2.json
-        ordered_3 = regions3
-        # filtered_3 = remove_y_overlaps(ordered_3)
-        filtered_3 = ordered_3
-        final_3 = []
+        for i in range(len(regions)):
+            if not keep_flags[i]:
+                continue
+            box1 = regions[i]["bounding_box"]
+            area1 = box1["w"] * box1["h"]
+            for j in range(i + 1, len(regions)):
+                if not keep_flags[j]:
+                    continue
+                box2 = regions[j]["bounding_box"]
+                area2 = box2["w"] * box2["h"]
 
-        for r3 in filtered_3:
-            box3 = r3["bounding_box"]
-            has_overlap = any(
-                boxes_overlap_adjusted(box3, r["bounding_box"]) for r in merged_regions
-            )
+                inter_area = get_intersection_area(box1, box2)
+                if inter_area == 0:
+                    continue
 
-            if not has_overlap:
-                # Force order=0 for all newly added 3.json regions
-                r3["order"] = 0
-                final_3.append(r3)
+                # Determine smaller region
+                if area1 < area2:
+                    smaller_idx, smaller_area = i, area1
+                else:
+                    smaller_idx, smaller_area = j, area2
 
-        added_from_3 += len(final_3)
-        merged_regions.extend(final_3)
-        merged_regions.sort(key=lambda r: r["order"])
-        image_entry["regions"] = merged_regions
+                frac_overlap = inter_area / smaller_area
+                if frac_overlap > 0.5:
+                    keep_flags[smaller_idx] = False
+                    if smaller_idx == i:
+                        break  # No need to check further for i
 
-    return added_from_3
+        # Retain only non-overlapping largest regions
+        image_entry["regions"] = [r for k, r in enumerate(regions) if keep_flags[k]]
 
-# def merge_all_regions_with_stats(file1, file2, file3):
-def merge_all_regions(data1, data2, data3):
+def merge_ajoy_openseg(data1, data2):
     map1 = {entry["image_name"]: entry["regions"] for entry in data1}
     map2 = {entry["image_name"]: entry["regions"] for entry in data2}
-    map3 = {entry["image_name"]: entry["regions"] for entry in data3}
 
     result = []
     overlap_1, overlap_2 = set(), set()
     total_boxes_file1, total_boxes_file2 = 0, 0
+
     multiple_1_to_2 = defaultdict(list)
     multiple_2_to_1 = defaultdict(list)
     used_2_indices = defaultdict(set)
+
     non_overlap_1 = defaultdict(list)
     non_overlap_2 = defaultdict(list)
     skipped_large_width_2 = defaultdict(list)
@@ -256,18 +213,27 @@ def merge_all_regions(data1, data2, data3):
                         skipped_large_width_2[img_name].append((idx2, reg2.get("order", -1)))
                         invalid_indices_2.add(idx2)
                         continue
+
                     overlap_1.add(idx1)
                     overlap_2.add(idx2)
                     multiple_1_to_2[(img_name, idx1)].append((img_name, idx2))
                     multiple_2_to_1[(img_name, idx2)].append((img_name, idx1))
                     found = True
+
+                    # Selection Logic
                     w1, h1 = box1["w"], box1["h"]
                     w2, h2 = box2["w"], box2["h"]
+
                     select_r1 = False
+
+                    # ✅ Condition A: R1 is wider than R2
                     if (w1 >=0.95*w2 and w1 <= 3.5 * w2 and 0.4 * h2 <= h1 <= 1.5 * h2):
                         select_r1 = True
+
+                    # ✅ Condition B: R1 is taller than R2
                     elif (h1 > h2 and h1 <= 1.4 * h2 and 0.7 * w2 <= w1 <= 1.3 * w2):
                         select_r1 = True
+
                     if select_r1:
                         merged = reg1.copy()
                         merged["bounding_box"] = box1
@@ -281,8 +247,10 @@ def merge_all_regions(data1, data2, data3):
                         for key in reg1:
                             if key not in merged:
                                 merged[key] = reg1[key]
+
                     merged_regions.append(merged)
                     used_2_indices[img_name].add(idx2)
+
             if not found:
                 merged_regions.append(reg1)
                 non_overlap_1[img_name].append((idx1, reg1.get("order", -1)))
@@ -299,11 +267,12 @@ def merge_all_regions(data1, data2, data3):
                 non_overlap_2[img_name].append((idx2, reg2.get("order", -1)))
 
         merged_regions.sort(key=lambda r: r["order"])
-        result.append({"image_name": img_name, "regions": merged_regions})
+        result.append({
+            "image_name": img_name,
+            "regions": merged_regions
+        })
 
-    integrate_3json(result, map3, map1, map2)
     assign_orders_based_on_neighbors(result)
     remove_smaller_overlapping_regions(result)
     resolve_duplicate_orders(result)
-
     return result
