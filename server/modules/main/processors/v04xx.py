@@ -8,6 +8,8 @@ from server.config import settings
 from ..factory import register
 from ..models import LayoutImageResponse, ModelChoice, Region
 
+# from .doclayout_yolo import YOLOv10
+
 
 class V04xxProcessor:
 
@@ -18,7 +20,10 @@ class V04xxProcessor:
     async def __call__(self, folder_path: str, **kwargs: Any):
         model_iden = int(self.model.split('.')[-1])
         model_path = settings.v04xx_model_path / f'{model_iden}.pt'
-        model = YOLO(model_path)
+        if model_iden == 7:
+            model = YOLO(model_path)
+        else:
+            model = YOLO(model_path)
         results = model.predict(source=folder_path, max_det=4000)
         ret = []
         for result in results:
@@ -39,3 +44,4 @@ register(ModelChoice.v0403)(V04xxProcessor(model='V-04.03'))
 register(ModelChoice.v0404)(V04xxProcessor(model='V-04.04'))
 register(ModelChoice.v0405)(V04xxProcessor(model='V-04.05'))
 register(ModelChoice.v0406)(V04xxProcessor(model='V-04.06'))
+register(ModelChoice.v0407)(V04xxProcessor(model='V-04.07'))

@@ -22,7 +22,8 @@ app = FastAPI(
 async def log_request_timestamp(request: Request, call_next):
 	local_tz = gettz('Asia/Kolkata')
 	print(f'Received request at: {datetime.now(tz=local_tz).isoformat()}')
-	return await call_next(request)
+	response = await call_next(request)
+	return response
 
 app.add_middleware(
 	CORSMiddleware,

@@ -29,6 +29,11 @@ class ModelChoice(str, Enum):
     v0501 = 'V-05.01' # Merge V-04.02 + Openseg
     v0502 = 'V-05.02' # Merge V-04.02 + Openseg + Craft
     v0503 = 'V-05.03' # Merge V-04.02 + Openseg + Craft (New Version)
+    v0504 = 'V-05.04' # Merge V-04.06 + Openseg
+    v0505 = 'V-05.05' # Merge V-04.06 + Openseg (New Merge Logic)
+    openyoja = 'OpenYoja'
+    indicdlp = 'IndicDLP'
+    v0407 = 'V-04.07'
 
 
 class BoundingBox(BaseModel):

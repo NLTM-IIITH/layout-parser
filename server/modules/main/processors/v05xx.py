@@ -9,6 +9,7 @@ import pytesseract
 from ultralytics import YOLO
 
 from server.config import settings
+from server.modules.main.processors.merge_codes.merge_ajoy_openseg_v5 import merge_v5
 
 from ..factory import register
 from ..models import BoundingBox, LayoutImageResponse, ModelChoice, Region
@@ -16,6 +17,7 @@ from .craft import CRAFTProcessor
 from .merge_codes.merge_ajoy_openseg import merge_ajoy_openseg
 from .merge_codes.merge_ajoy_openseg_craft import merge_all_regions
 from .merge_codes.merge_ajoy_openseg_craft_v3 import merge_3_new
+from .merge_codes.merge_ajoy_openseg_v4 import merge_v4
 
 
 def process_single_tesseract(image_info):
@@ -73,7 +75,8 @@ class V05xxProcessor:
         return super().__init__()
 
     async def ajoy_infer(self, folder_path: str) -> list[LayoutImageResponse]:
-        model_path = settings.v04xx_model_path / '2.pt'
+        model_name = '6.pt' if self.model in ('V-05.04', 'V-05.05') else '2.pt'
+        model_path = settings.v04xx_model_path / model_name
         model = YOLO(model_path)
         results = model.predict(source=folder_path, max_det=4000)
         ret = []
@@ -87,6 +90,7 @@ class V05xxProcessor:
                 regions=regions.copy(),
             )
             ret.append(response)
+        del model, results
         return ret
 
     async def openseg_infer(self, folder_path: str, language: str) -> list[LayoutImageResponse]:
@@ -95,7 +99,7 @@ class V05xxProcessor:
         image_paths = [join(folder_path, i) for i in image_paths]
         image_infos = [(i, language) for i in image_paths]
         loop = asyncio.get_running_loop()
-        with ProcessPoolExecutor(max_workers=5) as executor:
+        with ProcessPoolExecutor(max_workers=4) as executor:
             tasks = [
                 loop.run_in_executor(executor, process_single_tesseract, info)
                 for info in image_infos
@@ -112,7 +116,13 @@ class V05xxProcessor:
     ) -> list[LayoutImageResponse]:
         ajoy_data = [i.model_dump() for i in ajoy_result]
         openseg_data = [i.model_dump() for i in openseg_result]
-        merged_data = merge_ajoy_openseg(openseg_data, ajoy_data)
+        if self.model == 'V-05.01':
+            merged_data = merge_ajoy_openseg(openseg_data, ajoy_data)
+        elif self.model == 'V-05.04':
+            merged_data = merge_v4(openseg_data, ajoy_data)
+        else:
+            print('running merge_v5')
+            merged_data = merge_v5(openseg_data, ajoy_data)
         return [LayoutImageResponse.model_validate(i) for i in merged_data]
 
     async def merge_ajoy_openseg_craft(
@@ -133,7 +143,7 @@ class V05xxProcessor:
         language = kwargs.get('language', 'english')
         ajoy_result = await self.ajoy_infer(folder_path)
         openseg_result = await self.openseg_infer(folder_path, language)
-        if self.model == 'V-05.01':
+        if self.model in ('V-05.01', 'V-05.04', 'V-05.05'):
             return await self.merge_ajoy_openseg(ajoy_result, openseg_result)
         else:
             craft_result = await self.craft_infer(folder_path)
@@ -144,3 +154,6 @@ class V05xxProcessor:
 register(ModelChoice.v0501)(V05xxProcessor(model='V-05.01'))
 register(ModelChoice.v0502)(V05xxProcessor(model='V-05.02'))
 register(ModelChoice.v0503)(V05xxProcessor(model='V-05.03'))
+register(ModelChoice.v0504)(V05xxProcessor(model='V-05.04'))
+register(ModelChoice.v0505)(V05xxProcessor(model='V-05.05'))
+register(ModelChoice.openyoja)(V05xxProcessor(model='V-05.05'))

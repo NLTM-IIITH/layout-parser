@@ -35,5 +35,6 @@ class Settings(BaseSettings):
     yolov2_model_path: Path = Path('/home/layout/models/yolo_v2')
     v03xx_model_path: Path = Path('/home/layout/models/urdu_line')
     v04xx_model_path: Path = Path('/home/layout/models/ajoy_word_segmentation')
+    indicdlp_model_path: Path = Path('/home/layout/models/IndicDLP')
 
 settings = Settings()

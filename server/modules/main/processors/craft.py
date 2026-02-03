@@ -13,7 +13,7 @@ from ..models import BoundingBox, LayoutImageResponse, ModelChoice, Region
 def logtime(t: float, msg:  str) -> None:
     print(f'[{int(time.time() - t)}s]\t {msg}')
 
-def load_craft_container():
+def load_craft_container(folder_path: str):
     command = 'docker container ls --format "{{.Names}}"'
     a = check_output(command, shell=True).decode('utf-8').strip().split('\n')
     if 'parser-craft' not in a:
@@ -23,7 +23,7 @@ def load_craft_container():
             'run', '-d',
             '--name=parser-craft',
             '--gpus', 'all',
-            '-v', f'{settings.image_folder}:/data',
+            '-v', f'{folder_path}:/data',
             'parser:craft',
             'python', 'test.py'
         ])
@@ -35,11 +35,14 @@ class CRAFTProcessor:
         of word level bounding boxes of all the images
         """
         t = time.time()
-        load_craft_container()
+        load_craft_container(folder_path)
         run([
             'docker',
             'exec', 'parser-craft',
             'bash', 'infer.sh'
+        ])
+        run([
+            'docker', 'rm', '-f', 'parser-craft'
         ])
         logtime(t, 'Time took to run the craft docker container')
         img_files = [i for i in os.listdir(folder_path) if not i.endswith('txt')]
