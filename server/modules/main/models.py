@@ -34,6 +34,8 @@ class ModelChoice(str, Enum):
     openyoja = 'OpenYoja'
     indicdlp = 'IndicDLP'
     v0407 = 'V-04.07'
+    v0601 = 'V-06.01'
+    doclayout = 'doclayout'
 
 
 class BoundingBox(BaseModel):
