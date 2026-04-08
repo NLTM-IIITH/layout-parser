@@ -16,6 +16,7 @@ class ModelChoice(str, Enum):
     openseg = 'openseg'
     yoloro = 'yolo_ro'
     textbpnpp = 'textbpnpp'
+    focusformer = 'iitd_focusformer'
     v0301 = 'V-03.01'
     v0302 = 'V-03.02'
     v0303 = 'V-03.03'
@@ -36,6 +37,7 @@ class ModelChoice(str, Enum):
     v0407 = 'V-04.07'
     v0601 = 'V-06.01'
     doclayout = 'doclayout'
+    v0506 = 'V-05.06'
 
 
 class BoundingBox(BaseModel):

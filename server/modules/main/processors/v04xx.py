@@ -1,42 +1,62 @@
-from os.path import basename
+import json
+from os.path import join
+from subprocess import check_output
 from typing import Any
-
-from ultralytics import YOLO
 
 from server.config import settings
 
 from ..factory import register
 from ..models import LayoutImageResponse, ModelChoice, Region
 
-# from .doclayout_yolo import YOLOv10
-
 
 class V04xxProcessor:
+
+    async def __call__(self, folder_path: str, **kwargs: Any):
+        model_iden = int(self.model.split('.')[-1])
+        model_folder = settings.v04xx_model_path / f'{model_iden}'
+        check_output([
+            'docker',
+            'run',
+            '--rm',
+            '--gpus', 'all',
+            '-v', f'{folder_path}:/data',
+            '-v', f'{model_folder}:/model',
+            'layout:v04xx'
+        ])
+        with open(join(folder_path, 'out.json'), 'r') as f:
+            a = json.loads(f.read().strip())
+        ret = []
+        for each in a:
+            ret.append(LayoutImageResponse(
+                image_name=each['image_name'],
+                regions = [Region.from_xyxy(**i) for i in each['regions']]
+            ))
+        return ret
 
     def __init__(self, model: str = 'V-04.01') -> None:
         self.model = model
         return super().__init__()
 
-    async def __call__(self, folder_path: str, **kwargs: Any):
-        model_iden = int(self.model.split('.')[-1])
-        model_path = settings.v04xx_model_path / f'{model_iden}.pt'
-        if model_iden == 7:
-            model = YOLO(model_path)
-        else:
-            model = YOLO(model_path)
-        results = model.predict(source=folder_path, max_det=4000)
-        ret = []
-        for result in results:
-            bboxes = result.boxes.xyxy.cpu().numpy().astype(int).tolist() # type: ignore
-            bboxes = [tuple(i) for i in bboxes]
-            confs = (result.boxes.conf.cpu().numpy().round(3)) # type: ignore
-            regions = [Region.from_xyxy(v, line=i+1, conf=c, order=i+1) for i, (v, c) in enumerate(zip(bboxes, confs))]
-            response = LayoutImageResponse(
-                image_name=basename(result.path),
-                regions=regions.copy(),
-            )
-            ret.append(response)
-        return ret
+    # async def __call__(self, folder_path: str, **kwargs: Any):
+    #     model_iden = int(self.model.split('.')[-1])
+    #     model_path = settings.v04xx_model_path / f'{model_iden}.pt'
+    #     if model_iden == 7:
+    #         model = YOLO(model_path)
+    #     else:
+    #         model = YOLO(model_path)
+    #     results = model.predict(source=folder_path, max_det=4000)
+    #     ret = []
+    #     for result in results:
+    #         bboxes = result.boxes.xyxy.cpu().numpy().astype(int).tolist() # type: ignore
+    #         bboxes = [tuple(i) for i in bboxes]
+    #         confs = (result.boxes.conf.cpu().numpy().round(3)) # type: ignore
+    #         regions = [Region.from_xyxy(v, line=i+1, conf=c, order=i+1) for i, (v, c) in enumerate(zip(bboxes, confs))]
+    #         response = LayoutImageResponse(
+    #             image_name=basename(result.path),
+    #             regions=regions.copy(),
+    #         )
+    #         ret.append(response)
+    #     return ret
 
 register(ModelChoice.v0401)(V04xxProcessor(model='V-04.01'))
 register(ModelChoice.v0402)(V04xxProcessor(model='V-04.02'))

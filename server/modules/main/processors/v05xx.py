@@ -1,15 +1,19 @@
 import asyncio
+import json
 import os
+import shutil
 import time
 from concurrent.futures import ProcessPoolExecutor
 from os.path import basename, join
+from subprocess import check_output
 from typing import Any
 
 import pytesseract
 from ultralytics import YOLO
 
 from server.config import settings
-from server.modules.main.processors.merge_codes.merge_ajoy_openseg_v5 import merge_v5
+from server.modules.main.processors.merge_codes.merge_ajoy_openseg_v5 import \
+    merge_v5
 
 from ..factory import register
 from ..models import BoundingBox, LayoutImageResponse, ModelChoice, Region
@@ -75,22 +79,46 @@ class V05xxProcessor:
         return super().__init__()
 
     async def ajoy_infer(self, folder_path: str) -> list[LayoutImageResponse]:
-        model_name = '6.pt' if self.model in ('V-05.04', 'V-05.05') else '2.pt'
-        model_path = settings.v04xx_model_path / model_name
-        model = YOLO(model_path)
-        results = model.predict(source=folder_path, max_det=4000)
+        model_name = '2'
+        if self.model in ('V-05.04', 'V-05.05'):
+            model_name = '6'
+        elif self.model == 'V-05.06':
+            model_name = '7'
+        model_folder = settings.v04xx_model_path / f'{model_name}'
+        check_output([
+            'docker',
+            'run',
+            '--rm',
+            '--gpus', 'all',
+            '-v', f'{folder_path}:/data',
+            '-v', f'{model_folder}:/model',
+            'layout:v04xx'
+        ])
+        with open(join(folder_path, 'out.json'), 'r') as f:
+            a = json.loads(f.read().strip())
+        os.remove(join(folder_path, 'out.json'))
         ret = []
-        for result in results:
-            bboxes = result.boxes.xyxy.cpu().numpy().astype(int).tolist() # type: ignore
-            bboxes = [tuple(i) for i in bboxes]
-            confs = (result.boxes.conf.cpu().numpy().round(3)) # type: ignore
-            regions = [Region.from_xyxy(v, line=i+1, conf=c, order=i+1) for i, (v, c) in enumerate(zip(bboxes, confs))]
-            response = LayoutImageResponse(
-                image_name=basename(result.path),
-                regions=regions.copy(),
-            )
-            ret.append(response)
-        del model, results
+        for each in a:
+            ret.append(LayoutImageResponse(
+                image_name=each['image_name'],
+                regions = [Region.from_xyxy(**i) for i in each['regions']]
+            ))
+        # model_name = '6.pt' if self.model in ('V-05.04', 'V-05.05') else '2.pt'
+        # model_path = settings.v04xx_model_path / model_name
+        # model = YOLO(model_path)
+        # results = model.predict(source=folder_path, max_det=4000)
+        # ret = []
+        # for result in results:
+        #     bboxes = result.boxes.xyxy.cpu().numpy().astype(int).tolist() # type: ignore
+        #     bboxes = [tuple(i) for i in bboxes]
+        #     confs = (result.boxes.conf.cpu().numpy().round(3)) # type: ignore
+        #     regions = [Region.from_xyxy(v, line=i+1, conf=c, order=i+1) for i, (v, c) in enumerate(zip(bboxes, confs))]
+        #     response = LayoutImageResponse(
+        #         image_name=basename(result.path),
+        #         regions=regions.copy(),
+        #     )
+        #     ret.append(response)
+        # del model, results
         return ret
 
     async def openseg_infer(self, folder_path: str, language: str) -> list[LayoutImageResponse]:
@@ -157,3 +185,4 @@ register(ModelChoice.v0503)(V05xxProcessor(model='V-05.03'))
 register(ModelChoice.v0504)(V05xxProcessor(model='V-05.04'))
 register(ModelChoice.v0505)(V05xxProcessor(model='V-05.05'))
 register(ModelChoice.openyoja)(V05xxProcessor(model='V-05.05'))
+register(ModelChoice.v0506)(V05xxProcessor(model='V-05.06'))
